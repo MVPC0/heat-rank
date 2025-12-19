@@ -6,253 +6,345 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-    body {
-        margin: 0;
-        padding: 0;
-        font-family: Arial, sans-serif;
-        background-image: url("/static/background.jpg");
-        background-size: cover;
-        background-repeat: no-repeat;
-        background-attachment: fixed;
-        background-position: center;
-        position: relative;
-        transition: background-color 0.5s ease, color 0.5s ease;
-        color:#000000;
-    }
-    body::before {
-        content: "";
-        position: fixed;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        background: rgba(255,255,255,0.45);
-        z-index: -1;
-        transition: background 0.5s ease;
+  :root{
+    --text-light:#0b1220;
+    --text-dark:#f9fafb;
+    --nav-bg: rgba(0,0,0,0.55);
+  }
+
+  body{
+    margin:0;
+    padding:0;
+    font-family: Arial, sans-serif;
+    background-image: url("/static/background.jpg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-position: center;
+    position: relative;
+    transition: background-color 0.5s ease, color 0.5s ease;
+    color: var(--text-light);
+  }
+  body::before{
+    content:"";
+    position:fixed;
+    top:0; left:0;
+    width:100%; height:100%;
+    background: rgba(255,255,255,0.45);
+    z-index:-1;
+    transition: background 0.5s ease;
+  }
+
+  /* Night theme */
+  body.night{ color: var(--text-dark); }
+  body.night::before{ background: rgba(10,14,22,0.72); backdrop-filter: blur(2px); }
+  body.night.night-progamer::before{ background: rgba(4,6,12,0.82); backdrop-filter: blur(1px); }
+  body.night.night-oled::before{ background: rgba(0,0,0,0.92); backdrop-filter: none; }
+
+  /* =========================
+     NAVBAR (theme controls inside)
+     ========================= */
+  #topNav{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:10px 14px;
+    background: var(--nav-bg);
+    color:#f3f4f6;
+    font-weight:900;
+    flex-wrap:wrap;
+    position:fixed;
+    top:0; left:0; right:0;
+    z-index:50;
+    backdrop-filter: blur(6px);
+  }
+  .nav-left{
+    display:flex;
+    align-items:center;
+    gap:18px;
+    flex-wrap:wrap;
+  }
+  #topNav a{
+    color:#f3f4f6;
+    text-decoration:none;
+    font-weight:900;
+    letter-spacing:.2px;
+  }
+  #topNav a:hover{ text-decoration:underline; }
+
+  .nav-right{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+  }
+
+  #nightToggle{
+    background: rgba(255,255,255,0.12);
+    color:#fff;
+    padding:8px 12px;
+    border-radius:10px;
+    border:1px solid rgba(255,255,255,0.45);
+    cursor:pointer;
+    font-weight:900;
+    line-height:1;
+    white-space:nowrap;
+  }
+  #nightToggle:hover{ background: rgba(255,255,255,0.18); }
+
+  .nightStyleWrap{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:6px 10px;
+    border-radius:10px;
+    border:1px solid rgba(255,255,255,0.28);
+    background: rgba(255,255,255,0.10);
+    color:#f3f4f6;
+    font-size:12px;
+    font-weight:900;
+    white-space:nowrap;
+  }
+  #nightStyle{
+    border-radius:8px;
+    padding:6px 8px;
+    border:1px solid rgba(255,255,255,0.35);
+    background: rgba(0,0,0,0.25);
+    color:#f9fafb;
+    font-weight:900;
+    outline:none;
+    cursor:pointer;
+  }
+  body:not(.night) #nightStyle{
+    background: rgba(255,255,255,0.18);
+    color:#ffffff;
+  }
+
+  /* =========================
+     PAGE HEADER + TEXT
+     ========================= */
+  h2{
+    text-align:center;
+    margin: 88px 10px 8px; /* room for fixed navbar */
+    font-size: 28px;
+    font-weight: 900;
+    text-shadow: 0 0 6px rgba(0,0,0,0.3);
+  }
+
+  #playerHint{
+    text-align:center;
+    font-size: 14px;
+    margin: 0 12px 10px;
+    color: #111827;
+  }
+  body.night #playerHint{ color:#e5e7eb; }
+
+  #dnsDisclaimer{
+    max-width: 760px;
+    margin: 10px auto 6px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(255, 243, 205, 0.95);
+    color: #4b5563;
+    font-size: 13px;
+    border: 1px solid #facc15;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+  }
+
+  #dnsCard{
+    max-width: 680px;
+    margin: 16px auto 22px;
+    padding: 16px 20px;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.92);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    text-align: center;
+    color:#111827;
+  }
+  #dnsCard h3{
+    margin: 0 0 6px;
+    font-size: 22px;
+  }
+  #dnsCard p{
+    margin: 4px 0;
+    font-size: 15px;
+  }
+
+  .dns-line{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:8px;
+    margin-top: 8px;
+    flex-wrap:wrap;
+  }
+  .dns-label{ font-weight:900; }
+  .dns-value{
+    font-family: "Consolas", "Menlo", monospace;
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: rgba(0,0,0,0.06);
+  }
+
+  .copy-btn{
+    border:none;
+    border-radius: 8px;
+    padding: 6px 12px;
+    cursor:pointer;
+    font-size: 12px;
+    font-weight: 900;
+    background: #2563eb;
+    color: white;
+  }
+  .copy-btn:hover{ background:#1d4ed8; }
+
+  #copyStatus{
+    margin-top: 10px;
+    font-size: 13px;
+    color: #16a34a;
+    min-height: 18px;
+  }
+
+  table{
+    width: 92%;
+    max-width: 980px;
+    margin: 10px auto 30px;
+    border-collapse: collapse;
+    background: rgba(255,255,255,0.90);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.20);
+    font-size: 14px;
+    color: var(--text-light);
+  }
+  th, td{
+    text-align: center;
+    padding: 10px 8px;
+    border-bottom: 1px solid rgba(208,208,208,0.75);
+  }
+  th{
+    background: #506687;
+    color: #fff;
+    font-weight: 900;
+  }
+
+  /* Night-specific components */
+  body.night #dnsCard{ background: rgba(15,23,42,0.96); color: #e8ecf7; }
+  body.night #dnsDisclaimer{
+    background: rgba(30,64,175,0.25);
+    color: #e5e7eb;
+    border-color: #facc15;
+  }
+  body.night table{ background: rgba(15,23,42,0.96); color:#e8ecf7; }
+  body.night th{ background:#0f172a !important; }
+  body.night .dns-value{ background: rgba(255,255,255,0.10); }
+
+  /* =========================
+     MOBILE spacing (clean + breathable)
+     ========================= */
+  @media (max-width: 640px){
+    #topNav{ padding: 10px 10px; gap: 10px; }
+    .nav-left{ gap: 12px; }
+    .nav-right{
+      width: 100%;
+      justify-content: center;
+      gap: 10px;
     }
 
-    body.night {
-        color:#f9fafb;
-    }
-    body.night::before { background: rgba(10,14,22,0.72); backdrop-filter: blur(2px); }
-    body.night.night-progamer::before { background: rgba(4,6,12,0.82); backdrop-filter: blur(1px); }
-    body.night.night-oled::before { background: rgba(0,0,0,0.92); backdrop-filter: none; }
-
-    #topNav {
-        display: flex;
-        justify-content: center;
-        gap: 20px;
-        padding: 10px 0;
-        background: rgba(0,0,0,0.55);
-        color: #f3f4f6;
-        font-weight: 600;
-        flex-wrap: wrap;
-        position: fixed;
-        top:0; left:0; right:0;
-        z-index:50;
-    }
-    #topNav a {
-        color: #f3f4f6;
-        text-decoration: none;
-    }
-    #topNav a:hover {
-        text-decoration: underline;
+    h2{
+      margin-top: 132px; /* navbar likely wraps to 2 rows */
+      font-size: 22px;
     }
 
-    h2 {
-        text-align: center;
-        margin-top: 70px;
-        font-size: 28px;
-        font-weight: 900;
-        text-shadow: 0 0 6px rgba(0,0,0,0.3);
-        padding: 0 10px;
+    #dnsDisclaimer{
+      width: 92%;
+      font-size: 12.5px;
+      line-height: 1.5;
+      padding: 10px 10px;
+      border-radius: 12px;
     }
 
-    #playerHint {
-        text-align: center;
-        font-size: 14px;
-        margin-top: 4px;
-        color: #111827;
-    }
-    body.night #playerHint {
-        color: #e5e7eb;
+    #dnsCard{
+      width: 92%;
+      margin: 14px auto 18px;
+      padding: 14px 14px;
+      border-radius: 12px;
     }
 
-    #nightToggle {
-        position: fixed; top: 15px; right: 15px;
-        background: #222; color: #fff;
-        padding: 10px 18px; border-radius: 8px;
-        border: 2px solid #fff; cursor: pointer;
-        font-weight: bold; z-index: 99;
-    }
-    #nightStyleWrapper {
-        position: fixed; top: 60px; right: 15px;
-        padding: 6px 10px; border-radius: 8px;
-        background: rgba(255,255,255,0.85);
-        z-index: 98; font-size: 12px;
-    }
+    #dnsCard h3{ font-size: 18px; }
+    #dnsCard p{ font-size: 13px; }
 
-    #dnsDisclaimer {
-        max-width: 750px;
-        margin: 10px auto 5px;
-        padding: 8px 12px;
-        border-radius: 10px;
-        background: rgba(255, 243, 205, 0.95);
-        color: #4b5563;
-        font-size: 13px;
-        border: 1px solid #facc15;
+    .copy-btn{ padding: 6px 10px; }
+    table{
+      width: 92%;
+      font-size: 12px;
     }
-
-    #dnsCard {
-        max-width: 650px;
-        margin: 18px auto 25px;
-        padding: 16px 20px;
-        border-radius: 14px;
-        background: rgba(255,255,255,0.92);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-        text-align: center;
-        color:#111827;
-    }
-    #dnsCard h3 {
-        margin-top: 0;
-        font-size: 22px;
-        margin-bottom: 6px;
-    }
-    #dnsCard p {
-        margin: 4px 0;
-        font-size: 15px;
-    }
-
-    .dns-line {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 8px;
-        margin-top: 6px;
-        flex-wrap: wrap;
-    }
-    .dns-label {
-        font-weight: 700;
-    }
-    .dns-value {
-        font-family: "Consolas", "Menlo", monospace;
-        padding: 3px 6px;
-        border-radius: 6px;
-        background: rgba(0,0,0,0.05);
-    }
-
-    .copy-btn {
-        border: none;
-        border-radius: 6px;
-        padding: 4px 10px;
-        cursor: pointer;
-        font-size: 12px;
-        font-weight: 700;
-        background: #2563eb;
-        color: white;
-    }
-    .copy-btn:hover {
-        background: #1d4ed8;
-    }
-
-    #copyStatus {
-        margin-top: 8px;
-        font-size: 13px;
-        color: #16a34a;
-        min-height: 18px;
-    }
-
-    table {
-        width: 90%;
-        max-width: 950px;
-        margin: 10px auto 30px;
-        border-collapse: collapse;
-        background: rgba(255,255,255,0.9);
-        border-radius: 10px;
-        overflow: hidden;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        font-size: 14px;
-        color:#000000;
-    }
-    th, td {
-        text-align: center;
-        padding: 8px;
-        border-bottom: 1px solid #d0d0d0;
-    }
-    th {
-        background: #506687;
-        color: #fff;
-    }
-
-    body.night #dnsCard { background: rgba(15,23,42,0.96); color: #e8ecf7; }
-    body.night #dnsDisclaimer {
-        background: rgba(30,64,175,0.25);
-        color: #e5e7eb;
-        border-color: #facc15;
-    }
-    body.night table { background: rgba(15,23,42,0.96); color: #e8ecf7; }
-    body.night th { background: #0f172a !important; }
-
-    @media (max-width: 600px) {
-        th, td { font-size: 12px; padding: 6px; }
-        #dnsCard { margin: 14px auto 20px; padding: 12px; }
-        h2 { font-size: 22px; margin-top: 70px; }
-    }
+    th, td{ padding: 8px 6px; }
+  }
 </style>
 </head>
 <body>
 
 <div id="topNav">
+  <div class="nav-left">
     <a href="/">Home</a>
     <a href="/servers">Servers</a>
     <a href="/dns">DNS</a>
-</div>
+  </div>
 
-<button id="nightToggle">Night Mode</button>
-<div id="nightStyleWrapper">
-    <label>Night style:</label>
-    <select id="nightStyle">
+  <div class="nav-right">
+    <button id="nightToggle" type="button">Night Mode</button>
+    <div class="nightStyleWrap">
+      <label for="nightStyle">Style</label>
+      <select id="nightStyle">
         <option value="comfort">Comfort</option>
         <option value="progamer">Pro Gamer</option>
         <option value="oled">OLED</option>
-    </select>
+      </select>
+    </div>
+  </div>
 </div>
 
 <h2>Recommended DNS for Your Best Server 🌐</h2>
 <div id="playerHint"></div>
 
 <div id="dnsDisclaimer">
-    ⚠ <strong>Note:</strong> Changing DNS does <em>not</em> force your game (PUBG, Warzone, etc.)
-    onto a specific region. DNS can improve latency, routing, and stability — but matchmaking still
-    decides the final server. These DNS settings are safe, fast, and tuned for the region with the
-    lowest ping for you right now.
+  ⚠ <strong>Note:</strong> Changing DNS does <em>not</em> force your game (PUBG, Warzone, etc.)
+  onto a specific region. DNS can improve latency, routing, and stability — but matchmaking still
+  decides the final server. These DNS settings are safe, fast, and tuned for the region with the
+  lowest ping for you right now.
 </div>
 
 <div id="dnsCard">
-    <h3 id="bestTitle">Detecting best server...</h3>
-    <p id="bestInfo"></p>
+  <h3 id="bestTitle">Detecting best server...</h3>
+  <p id="bestInfo"></p>
 
-    <div class="dns-line">
-        <span class="dns-label">Primary:</span>
-        <span class="dns-value" id="primaryDns">-</span>
-        <button class="copy-btn" onclick="copyDns('primary')">Copy</button>
-    </div>
-    <div class="dns-line">
-        <span class="dns-label">Secondary:</span>
-        <span class="dns-value" id="secondaryDns">-</span>
-        <button class="copy-btn" onclick="copyDns('secondary')">Copy</button>
-    </div>
+  <div class="dns-line">
+    <span class="dns-label">Primary:</span>
+    <span class="dns-value" id="primaryDns">-</span>
+    <button class="copy-btn" type="button" onclick="copyDns('primary')">Copy</button>
+  </div>
 
-    <div id="copyStatus"></div>
+  <div class="dns-line">
+    <span class="dns-label">Secondary:</span>
+    <span class="dns-value" id="secondaryDns">-</span>
+    <button class="copy-btn" type="button" onclick="copyDns('secondary')">Copy</button>
+  </div>
+
+  <div id="copyStatus"></div>
 </div>
 
 <table id="dnsTable">
-    <tr>
-        <th>Server</th>
-        <th>Region</th>
-        <th>Status</th>
-        <th>Ping (ms)</th>
-        <th>Primary DNS</th>
-        <th>Secondary DNS</th>
-    </tr>
+  <tr>
+    <th>Server</th>
+    <th>Region</th>
+    <th>Status</th>
+    <th>Ping (ms)</th>
+    <th>Primary DNS</th>
+    <th>Secondary DNS</th>
+  </tr>
 </table>
 
 <script>
@@ -264,180 +356,171 @@ let playerRegion = null;
 let playerTimezone = null;
 let playerIP = null;
 
-/* Theme init (same as other pages) */
+/* Theme init (shared across pages) */
 (function initTheme(){
-    const savedTheme = localStorage.getItem("theme");
-    const savedStyle = localStorage.getItem("nightStyle") || "comfort";
+  const savedTheme = localStorage.getItem("theme");
+  const savedStyle = localStorage.getItem("nightStyle") || "comfort";
 
-    const prefersDark = window.matchMedia &&
-        window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const hour = new Date().getHours();
-    const isNightByTime = (hour >= 20 || hour < 6);
+  const prefersDark = window.matchMedia &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const hour = new Date().getHours();
+  const isNightByTime = (hour >= 20 || hour < 6);
 
-    if (savedTheme === "night" ||
-        (!savedTheme && prefersDark) ||
-        (!savedTheme && isNightByTime)) {
-        document.body.classList.add("night");
-        document.body.classList.add("night-" + savedStyle);
-    }
-    nightStyle.value = savedStyle;
+  if (savedTheme === "night" || (!savedTheme && prefersDark) || (!savedTheme && isNightByTime)) {
+    document.body.classList.add("night");
+    document.body.classList.add("night-" + savedStyle);
+  }
+  nightStyle.value = savedStyle;
 
-    nightBtn.textContent = document.body.classList.contains("night")
-        ? "Light Mode"
-        : "Night Mode";
+  nightBtn.textContent = document.body.classList.contains("night")
+    ? "Light Mode"
+    : "Night Mode";
 })();
 
-nightBtn.addEventListener("click",()=>{
-    const state = document.body.classList.toggle("night");
-    localStorage.setItem("theme", state ? "night" : "day");
+nightBtn.addEventListener("click", ()=>{
+  const state = document.body.classList.toggle("night");
+  localStorage.setItem("theme", state ? "night" : "day");
 
-    STYLES.forEach(s=>document.body.classList.remove("night-"+s));
-    if (state) {
-        const savedStyle = localStorage.getItem("nightStyle") || "comfort";
-        document.body.classList.add("night-" + savedStyle);
-    }
-
-    nightBtn.textContent = state ? "Light Mode" : "Night Mode";
+  STYLES.forEach(s => document.body.classList.remove("night-"+s));
+  if (state) {
+    const savedStyle = localStorage.getItem("nightStyle") || "comfort";
+    document.body.classList.add("night-" + savedStyle);
+  }
+  nightBtn.textContent = state ? "Light Mode" : "Night Mode";
 });
 
-nightStyle.addEventListener("change",()=>{
-    STYLES.forEach(s=>document.body.classList.remove("night-"+s));
-    if(document.body.classList.contains("night"))
-        document.body.classList.add("night-"+nightStyle.value);
-    localStorage.setItem("nightStyle", nightStyle.value);
+nightStyle.addEventListener("change", ()=>{
+  STYLES.forEach(s => document.body.classList.remove("night-"+s));
+  if (document.body.classList.contains("night")) {
+    document.body.classList.add("night-"+nightStyle.value);
+  }
+  localStorage.setItem("nightStyle", nightStyle.value);
 });
 
 /* Player IP / region hint */
-async function loadPlayerMeta() {
-    try {
-        const res = await fetch("/api/player");
-        const meta = await res.json();
-        playerRegion = meta.region || null;
-        playerTimezone = meta.timezone || null;
-        playerIP = meta.ip || null;
+async function loadPlayerMeta(){
+  try{
+    const res = await fetch("/api/player");
+    const meta = await res.json();
+    playerRegion = meta.region || null;
+    playerTimezone = meta.timezone || null;
+    playerIP = meta.ip || null;
 
-        const hint = document.getElementById("playerHint");
-        if (playerRegion && playerTimezone) {
-            hint.textContent = `We think you're in: ${playerRegion} (TZ: ${playerTimezone}) • DNS tuned for your best region right now.`;
-        } else {
-            hint.textContent = `Could not detect your region. Showing global best DNS by ping.`;
-        }
-    } catch (e) {
-        console.error("Failed to load player meta:", e);
+    const hint = document.getElementById("playerHint");
+    if (playerRegion && playerTimezone) {
+      hint.textContent = `We think you're in: ${playerRegion} (TZ: ${playerTimezone}) • DNS tuned for your best region right now.`;
+    } else {
+      hint.textContent = `Could not detect your region. Showing global best DNS by ping.`;
     }
+  } catch(e){
+    console.error("Failed to load player meta:", e);
+  }
 }
 
-/* Sorting matches index.html */
-function sortServers(servers) {
-    const rank = { "botty": 0, "average": 1, "sweaty": 2 };
+/* Sorting matches Servers page */
+function sortServers(servers){
+  const rank = { "botty": 0, "average": 1, "sweaty": 2 };
 
-    return servers.sort((a, b) => {
-        const sa = (a.status || "").toLowerCase();
-        const sb = (b.status || "").toLowerCase();
+  return servers.sort((a,b)=>{
+    const sa = (a.status || "").toLowerCase();
+    const sb = (b.status || "").toLowerCase();
+    const ra = rank[sa] ?? 99;
+    const rb = rank[sb] ?? 99;
 
-        const ra = rank[sa] ?? 99;
-        const rb = rank[sb] ?? 99;
+    if (ra !== rb) return ra - rb;
 
-        if (ra !== rb) return ra - rb;
-
-        if (playerRegion) {
-            const regionScoreA = (a.region === playerRegion) ? 0 : 1;
-            const regionScoreB = (b.region === playerRegion) ? 0 : 1;
-            if (regionScoreA !== regionScoreB) return regionScoreA - regionScoreB;
-        }
-
-        return a.ping - b.ping;
-    });
+    if (playerRegion) {
+      const regionScoreA = (a.region === playerRegion) ? 0 : 1;
+      const regionScoreB = (b.region === playerRegion) ? 0 : 1;
+      if (regionScoreA !== regionScoreB) return regionScoreA - regionScoreB;
+    }
+    return a.ping - b.ping;
+  });
 }
 
 /* Copy DNS */
-function copyDns(which) {
-    const value = document.getElementById(
-        which === "primary" ? "primaryDns" : "secondaryDns"
-    ).textContent.trim();
+function copyDns(which){
+  const value = document.getElementById(which === "primary" ? "primaryDns" : "secondaryDns")
+    .textContent.trim();
+  if (!value || value === "-") return;
 
-    if (!value || value === "-") return;
-
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(value).then(()=>{
-            showCopyStatus(`Copied ${which} DNS: ${value}`);
-        }).catch(()=>{
-            fallbackCopy(value, which);
-        });
-    } else {
-        fallbackCopy(value, which);
-    }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(value)
+      .then(()=> showCopyStatus(`Copied ${which} DNS: ${value}`))
+      .catch(()=> fallbackCopy(value, which));
+  } else {
+    fallbackCopy(value, which);
+  }
 }
-function fallbackCopy(text, which) {
-    try {
-        const ta = document.createElement("textarea");
-        ta.value = text;
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand("copy");
-        document.body.removeChild(ta);
-        showCopyStatus(`Copied ${which} DNS: ${text}`);
-    } catch(e) {
-        alert("Copy failed, please copy manually: " + text);
-    }
+function fallbackCopy(text, which){
+  try{
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+    showCopyStatus(`Copied ${which} DNS: ${text}`);
+  } catch(e){
+    alert("Copy failed, please copy manually: " + text);
+  }
 }
-function showCopyStatus(msg) {
-    const el = document.getElementById("copyStatus");
-    el.textContent = msg;
-    setTimeout(()=>{ el.textContent = ""; }, 2500);
+function showCopyStatus(msg){
+  const el = document.getElementById("copyStatus");
+  el.textContent = msg;
+  setTimeout(()=>{ el.textContent = ""; }, 2500);
 }
 
 /* Load DNS data */
-async function loadDns() {
-    try {
-        const res = await fetch("/api/status");
-        let servers = await res.json();
+async function loadDns(){
+  try{
+    const res = await fetch("/api/status");
+    let servers = await res.json();
+    servers = sortServers(servers);
 
-        servers = sortServers(servers);
+    const best = servers[0];
+    const titleEl = document.getElementById("bestTitle");
+    const infoEl = document.getElementById("bestInfo");
+    const primaryEl = document.getElementById("primaryDns");
+    const secondaryEl = document.getElementById("secondaryDns");
 
-        const best = servers[0];
-        const titleEl = document.getElementById("bestTitle");
-        const infoEl = document.getElementById("bestInfo");
-        const primaryEl = document.getElementById("primaryDns");
-        const secondaryEl = document.getElementById("secondaryDns");
+    const table = document.getElementById("dnsTable");
+    table.innerHTML = `
+      <tr>
+        <th>Server</th>
+        <th>Region</th>
+        <th>Status</th>
+        <th>Ping (ms)</th>
+        <th>Primary DNS</th>
+        <th>Secondary DNS</th>
+      </tr>
+    `;
 
-        const table = document.getElementById("dnsTable");
-        table.innerHTML = `
-            <tr>
-                <th>Server</th>
-                <th>Region</th>
-                <th>Status</th>
-                <th>Ping (ms)</th>
-                <th>Primary DNS</th>
-                <th>Secondary DNS</th>
-            </tr>
-        `;
-
-        if (!servers.length || !best) {
-            titleEl.textContent = "No server data available";
-            infoEl.textContent = "";
-            primaryEl.textContent = "-";
-            secondaryEl.textContent = "-";
-            return;
-        }
-
-        titleEl.textContent = `Best Server Right Now: ${best.name} (${best.region})`;
-        infoEl.textContent = `Ping: ${best.ping} ms — Status: ${best.status}`;
-        primaryEl.textContent = best.primary_dns || "-";
-        secondaryEl.textContent = best.secondary_dns || "-";
-
-        servers.forEach(s => {
-            const row = table.insertRow();
-            row.insertCell(0).textContent = s.name;
-            row.insertCell(1).textContent = s.region || "-";
-            row.insertCell(2).textContent = s.status || "-";
-            row.insertCell(3).textContent = s.ping;
-            row.insertCell(4).textContent = s.primary_dns || "-";
-            row.insertCell(5).textContent = s.secondary_dns || "-";
-        });
-    } catch (e) {
-        console.error("Error loading DNS data:", e);
+    if (!servers.length || !best){
+      titleEl.textContent = "No server data available";
+      infoEl.textContent = "";
+      primaryEl.textContent = "-";
+      secondaryEl.textContent = "-";
+      return;
     }
+
+    titleEl.textContent = `Best Server Right Now: ${best.name} (${best.region})`;
+    infoEl.textContent = `Ping: ${best.ping} ms — Status: ${best.status}`;
+    primaryEl.textContent = best.primary_dns || "-";
+    secondaryEl.textContent = best.secondary_dns || "-";
+
+    servers.forEach(s=>{
+      const row = table.insertRow();
+      row.insertCell(0).textContent = s.name;
+      row.insertCell(1).textContent = s.region || "-";
+      row.insertCell(2).textContent = s.status || "-";
+      row.insertCell(3).textContent = s.ping;
+      row.insertCell(4).textContent = s.primary_dns || "-";
+      row.insertCell(5).textContent = s.secondary_dns || "-";
+    });
+  } catch(e){
+    console.error("Error loading DNS data:", e);
+  }
 }
 
 loadPlayerMeta();
