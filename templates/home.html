@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Heat Rank — Smarter Server Selection for Gamers</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+    body {
+        margin:0; padding:0;
+        font-family: Arial, sans-serif;
+        background-image: url("/static/background.jpg");
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        transition: background-color .4s, color .4s;
+        color: #000000;
+    }
+    body::before {
+        content:"";
+        position:fixed; top:0; left:0;
+        width:100%; height:100%;
+        background:rgba(255,255,255,0.42);
+        z-index:-1;
+        transition:background .4s;
+    }
+
+    body.night {
+        color: #f9fafb;
+    }
+    body.night::before { background:rgba(10,14,22,.75); backdrop-filter:blur(2px); }
+    body.night.night-progamer::before { background:rgba(4,7,12,.83); }
+    body.night.night-oled::before { background:rgba(0,0,0,.92); }
+
+    #nightToggle {
+        position:fixed; top:15px; right:15px;
+        padding:10px 18px;
+        border-radius:8px; border:2px solid #fff;
+        background:#222; color:#fff; cursor:pointer;
+        font-weight:bold; z-index:99;
+    }
+
+    #nightStyleWrapper {
+        position:fixed; top:60px; right:15px;
+        padding:6px 10px;
+        background:rgba(255,255,255,0.85);
+        border-radius:8px;
+        font-size:12px;
+        z-index:98;
+    }
+
+    #topNav {
+        display:flex;
+        justify-content:center;
+        gap:20px;
+        padding:10px 0;
+        background:rgba(0,0,0,0.55);
+        color:#f9fafb;
+        font-weight:600;
+        position:fixed;
+        top:0; left:0; right:0;
+        z-index:50;
+    }
+    #topNav a {
+        color:#f9fafb;
+        text-decoration:none;
+    }
+    #topNav a:hover { text-decoration:underline; }
+
+    header {
+        text-align:center;
+        margin-top:80px;
+        padding:80px 15px 0;
+    }
+    header h1 {
+        font-size:44px;
+        font-weight:900;
+        margin-bottom:10px;
+        text-shadow:0 0 8px rgba(0,0,0,.3);
+    }
+    header p {
+        font-size:18px;
+        max-width:640px;
+        margin:10px auto 30px;
+        opacity:.95;
+    }
+
+    .btn-row {
+        display:flex;
+        justify-content:center;
+        gap:18px;
+        flex-wrap:wrap;
+        margin-bottom:50px;
+    }
+    .big-btn {
+        padding:14px 26px;
+        font-size:19px;
+        border:none;
+        border-radius:9px;
+        cursor:pointer;
+        font-weight:900;
+        color:#fff;
+        transition:transform .2s, box-shadow .2s;
+        text-decoration:none;
+        display:inline-block;
+    }
+    .big-btn:hover { transform:scale(1.04); box-shadow:0 0 14px rgba(0,0,0,.35); }
+    .btn-map { background:#2563eb; }
+    .btn-dns { background:#0d9488; }
+
+    section {
+        max-width:960px;
+        margin:auto;
+        background:rgba(255,255,255,.91);
+        border-radius:14px;
+        padding:25px 28px;
+        box-shadow:0 4px 12px rgba(0,0,0,.25);
+        margin-bottom:35px;
+        color:#111827;
+    }
+    section h2 {
+        text-align:center;
+        font-size:28px;
+        font-weight:900;
+        margin-bottom:15px;
+    }
+    ul.features {
+        list-style:none;
+        padding:0;
+        font-size:17px;
+        line-height:1.7;
+    }
+    ul.features li::before {
+        content:"🔥";
+        margin-right:8px;
+    }
+
+    footer {
+        text-align:center;
+        font-size:14px;
+        margin:40px 0 20px;
+        opacity:.9;
+    }
+
+    body.night section { background:rgba(11,15,22,.92); color:#e5e7eb; }
+    body.night footer { color:#e5e7eb; }
+</style>
+</head>
+<body>
+
+<div id="topNav">
+    <a href="/">Home</a>
+    <a href="/servers">Servers</a>
+    <a href="/dns">DNS</a>
+</div>
+
+<button id="nightToggle">Night Mode</button>
+<div id="nightStyleWrapper">
+    <label>Night style:</label>
+    <select id="nightStyle">
+        <option value="comfort">Comfort</option>
+        <option value="progamer">Pro Gamer</option>
+        <option value="oled">OLED</option>
+    </select>
+</div>
+
+<header>
+    <h1>Heat Rank</h1>
+    <p>
+        The fastest way to find <strong>botty-lobby servers</strong> and smarter DNS
+        for real-time games like <strong>PUBG, Warzone, Apex, Fortnite</strong> and more —
+        using live ping, time-of-day, holidays, and regional sweat patterns.
+    </p>
+</header>
+
+<div class="btn-row">
+    <a href="/servers" class="big-btn btn-map">🔥 View Live Heat Map</a>
+    <a href="/dns" class="big-btn btn-dns">🌐 DNS Recommendations</a>
+</div>
+
+<section>
+    <h2>What Heat Rank Does</h2>
+    <ul class="features">
+        <li>Live ping testing across major game regions (NA, EU, SA, APAC, MEA, Oceania)</li>
+        <li>Predicts <strong>Botty / Average / Sweaty</strong> based on ping, population patterns, and time-of-day</li>
+        <li>Auto-recommends the <strong>best server right now</strong> based on your IP region</li>
+        <li>Ranks servers from easiest → sweatiest globally</li>
+        <li>Smart DNS suggestions for better routing (not matchmaking forcing)</li>
+    </ul>
+</section>
+
+<section>
+    <h2>Who Is It For?</h2>
+    <ul class="features">
+        <li>Players hunting for calmer, botty-style lobbies</li>
+        <li>Gamers with unstable ping or weird routes</li>
+        <li>Streamers who want predictable matches</li>
+        <li>Competitive grinders practicing in other regions</li>
+    </ul>
+</section>
+
+<footer>
+    Made by MVP Production — Enjoy the botty servers 💚
+</footer>
+
+<script>
+const nightBtn = document.getElementById("nightToggle");
+const nightStyle = document.getElementById("nightStyle");
+const STYLES = ["comfort","progamer","oled"];
+
+(function initTheme(){
+    const savedTheme = localStorage.getItem("theme");
+    const savedStyle = localStorage.getItem("nightStyle") || "comfort";
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const hour = new Date().getHours();
+    const autoNight = hour >= 20 || hour < 6;
+
+    if (savedTheme === "night" || (!savedTheme && (prefersDark || autoNight))) {
+        document.body.classList.add("night","night-"+savedStyle);
+    }
+    nightStyle.value = savedStyle;
+    nightBtn.textContent = document.body.classList.contains("night") ? "Light Mode" : "Night Mode";
+})();
+
+nightBtn.addEventListener("click",()=>{
+    const night = document.body.classList.toggle("night");
+    localStorage.setItem("theme", night ? "night" : "day");
+    STYLES.forEach(s=>document.body.classList.remove("night-"+s));
+    if (night) document.body.classList.add("night-"+nightStyle.value);
+    nightBtn.textContent = night ? "Light Mode" : "Night Mode";
+});
+
+nightStyle.addEventListener("change",()=>{
+    STYLES.forEach(s=>document.body.classList.remove("night-"+s));
+    if(document.body.classList.contains("night"))
+        document.body.classList.add("night-"+nightStyle.value);
+    localStorage.setItem("nightStyle", nightStyle.value);
+});
+</script>
+
+</body>
+</html>
