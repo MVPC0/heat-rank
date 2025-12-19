@@ -6,370 +6,366 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-  :root{
-    --text-light: #0b1220;
-    --text-dark:  #f9fafb;
-
-    --nav-bg: rgba(0,0,0,0.55);
-    --card-bg: rgba(255,255,255,0.88);
-    --card-bg-night: rgba(8,8,12,0.95);
-  }
-
-  body{
-    margin:0;
-    padding:0;
-    font-family: Arial, sans-serif;
-    background-image:url("/static/background.jpg");
-    background-size:cover;
-    background-repeat:no-repeat;
-    background-attachment:fixed;
-    background-position:center;
-    position:relative;
-    transition: background-color .5s ease, color .5s ease;
-    color: var(--text-light);
-  }
-
-  body::before{
-    content:"";
-    position:fixed;
-    top:0; left:0;
-    width:100%; height:100%;
-    background: rgba(255,255,255,0.40);
-    z-index:-1;
-    transition: background .5s ease;
-  }
-
-  /* Night overlays */
-  body.night{ color: var(--text-dark); }
-  body.night::before{ background: rgba(10,14,22,0.72); backdrop-filter: blur(2px); }
-  body.night.night-progamer::before{ background: rgba(4,6,12,0.82); backdrop-filter: blur(1px); }
-  body.night.night-oled::before{ background: rgba(0,0,0,0.92); backdrop-filter: none; }
-
-  /* =========================
-     NAVBAR (includes theme)
-     ========================= */
-  #topNav{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap: 12px;
-    padding: 10px 14px;
-    background: var(--nav-bg);
-    color:#f3f4f6;
-    font-weight:700;
-    position:fixed;
-    top:0; left:0; right:0;
-    z-index: 50;
-    backdrop-filter: blur(6px);
-  }
-
-  .nav-left{
-    display:flex;
-    align-items:center;
-    gap: 18px;
-    flex-wrap:wrap;
-  }
-
-  #topNav a{
-    color:#f3f4f6;
-    text-decoration:none;
-    font-weight:800;
-    letter-spacing: .2px;
-  }
-  #topNav a:hover{ text-decoration:underline; }
-
-  .nav-right{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    flex-wrap:wrap;
-    justify-content:flex-end;
-  }
-
-  /* Theme controls in navbar */
-  #nightToggle{
-    background: rgba(255,255,255,0.12);
-    color:#fff;
-    padding: 8px 12px;
-    border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.45);
-    cursor:pointer;
-    font-weight:900;
-    line-height:1;
-    white-space:nowrap;
-  }
-  #nightToggle:hover{ background: rgba(255,255,255,0.18); }
-
-  .nightStyleWrap{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    padding: 6px 10px;
-    border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.28);
-    background: rgba(255,255,255,0.10);
-    color:#f3f4f6;
-    font-size:12px;
-    font-weight:800;
-    white-space:nowrap;
-  }
-  .nightStyleWrap label{ opacity:.95; }
-
-  #nightStyle{
-    border-radius: 8px;
-    padding: 6px 8px;
-    border: 1px solid rgba(255,255,255,0.35);
-    background: rgba(0,0,0,0.25);
-    color:#f9fafb;
-    font-weight:900;
-    outline:none;
-    cursor:pointer;
-  }
-
-  /* Light mode select readability */
-  body:not(.night) #nightStyle{
-    background: rgba(255,255,255,0.18);
-    color:#ffffff;
-  }
-
-  /* =========================
-     PAGE LAYOUT
-     ========================= */
-  .page{
-    padding-top: 74px; /* space for fixed navbar */
-    padding-bottom: 24px;
-  }
-
-  h2{
-    text-align:center;
-    margin: 14px 10px 6px;
-    font-size: 30px;
-    font-weight: 900;
-    text-shadow: 0 0 6px rgba(0,0,0,0.30);
-  }
-
-  #playerHint{
-    text-align:center;
-    font-size: 14px;
-    margin: 4px 12px 0;
-    color:#111827;
-  }
-  body.night #playerHint{ color:#e5e7eb; }
-
-  /* Auto-Recommend Banner */
-  #bestBanner{
-    width: fit-content;
-    max-width: 95%;
-    margin: 12px auto 18px;
-    font-size: 22px;
-    font-weight: 900;
-    padding: 10px 22px;
-    border-radius: 12px;
-    background: rgba(0,85,0,0.18);
-    color: #009e33;
-    border: 2px solid rgba(0,255,0,0.55);
-    box-shadow: 0 0 10px rgba(0,255,0,0.40);
-    text-align:center;
-    display:none;
-    transition: background-color .4s, box-shadow .4s, color .4s;
-  }
-  body.night #bestBanner{ background: rgba(0,255,0,0.10); color:#67ff79; }
-  body.night.night-oled #bestBanner{ background: rgba(0,255,0,0.06); color:#4dff60; }
-
-  .winner-animate{ animation: winnerPulse .9s ease-out; }
-  @keyframes winnerPulse{
-    0%{transform:scale(1);box-shadow:0 0 9px rgba(0,255,0,.4)}
-    50%{transform:scale(1.055);box-shadow:0 0 24px rgba(0,255,0,.9)}
-    100%{transform:scale(1);box-shadow:0 0 9px rgba(0,255,0,.4)}
-  }
-
-  .legend{
-    width: min(980px, 92%);
-    margin: 10px auto 18px;
-    display:flex;
-    justify-content:center;
-    flex-wrap:wrap;
-    gap: 10px 18px;
-    padding: 0 8px;
-  }
-  .legend-item{
-    font-weight:900;
-    display:flex;
-    gap:8px;
-    align-items:center;
-    font-size: 14px;
-  }
-  .legend-color{
-    width: 18px; height: 18px;
-    border-radius: 4px;
-    border: 1px solid rgba(0,0,0,0.35);
-  }
-  body.night .legend-color{ border-color: rgba(255,255,255,0.25); }
-
-  .legend-sweaty{ background:#ff4d4d; }
-  .legend-botty{ background:#00b44b; }
-  .legend-average{ background:#c6a75e; }
-
-  #lastUpdated{
-    text-align:center;
-    margin: 8px 0 14px;
-    font-size: 14px;
-    opacity:.95;
-  }
-
-  table{
-    width: min(1000px, 94%);
-    margin: 0 auto 18px;
-    border-collapse: collapse;
-    background: var(--card-bg);
-    border-radius: 12px;
-    overflow:hidden;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.22);
-    color: var(--text-light);
-  }
-
-  body.night table{
-    background: var(--card-bg-night);
-    color: #e8ecf7;
-  }
-
-  th, td{
-    text-align:center;
-    padding: 10px 10px;
-    border-bottom: 1px solid rgba(208,208,208,0.75);
-    font-size: 15px;
-    font-weight: 700;
-  }
-
-  th{
-    background:#506687;
-    color:#fff;
-    position:sticky;
-    top: 54px; /* below navbar */
-    z-index: 1;
-  }
-  body.night th{ background:#111826 !important; }
-
-  .status-badge{
-    padding: 4px 12px;
-    border-radius: 999px;
-    font-size: 0.78rem;
-    font-weight: 1000;
-    letter-spacing: .3px;
-    display:inline-block;
-    min-width: 86px;
-  }
-  .status-badge-botty{ background:#00b44b; color:#fff; }
-  .status-badge-sweaty{ background:#ff4d4d; color:#fff; }
-  .status-badge-average{ background:#c6a75e; color:#221a08; }
-
-  /* Heat-map row coloring */
-  tr.status-botty{ background-color: rgba(0,255,0,0.06); }
-  tr.status-average{ background-color: rgba(255,215,0,0.05); }
-  tr.status-sweaty{ background-color: rgba(255,0,0,0.04); }
-
-  body.night tr.status-botty{ background-color: rgba(22,163,74,0.30); }
-  body.night tr.status-average{ background-color: rgba(234,179,8,0.25); }
-  body.night tr.status-sweaty{ background-color: rgba(220,38,38,0.25); }
-
-  .winner{
-    border: 3px solid rgba(0,255,0,0.95) !important;
-    box-shadow: 0 0 14px rgba(0,255,0,0.65);
-    animation: pulse 2.2s infinite;
-  }
-  @keyframes pulse{
-    0%{box-shadow:0 0 6px rgba(0,255,0,0.55)}
-    50%{box-shadow:0 0 18px rgba(0,255,0,1)}
-    100%{box-shadow:0 0 6px rgba(0,255,0,0.55)}
-  }
-
-  /* =========================
-     MOBILE (clean + breathable)
-     ========================= */
-  @media (max-width: 640px){
-    #topNav{
-      padding: 10px 10px;
-      gap: 10px;
-    }
-    .nav-left{ gap: 12px; }
-    .nav-right{
-      width: 100%;
-      justify-content: center;
-      gap: 10px;
+    :root{
+        --text-light: #000000;
+        --text-dark: #f9fafb;
+        --nav-bg: rgba(0,0,0,0.70);
+        --card-bg: rgba(255,255,255,0.88);
+        --card-bg-dark: rgba(8,8,12,0.95);
+        --muted-light: #111827;
+        --muted-dark: #e5e7eb;
     }
 
-    .page{ padding-top: 110px; } /* nav wraps into 2 rows */
-    h2{ font-size: 22px; margin-top: 6px; }
+    * { box-sizing: border-box; }
 
-    #playerHint{ font-size: 13px; padding: 0 10px; line-height: 1.4; }
-
-    #bestBanner{
-      font-size: 16px;
-      padding: 9px 12px;
-      margin: 10px auto 14px;
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: Arial, sans-serif;
+        background-image: url("/static/background.jpg");
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        background-position: center;
+        position: relative;
+        transition: background-color 0.5s ease, color 0.5s ease;
+        color: var(--text-light);
+    }
+    body::before {
+        content: "";
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(255,255,255,0.40);
+        z-index: -1;
+        transition: background 0.5s ease;
     }
 
-    .legend{
-      width: 94%;
-      gap: 8px 12px;
-      margin: 8px auto 14px;
-    }
-    .legend-item{ font-size: 13px; }
+    /* Night overlays */
+    body.night { color: var(--text-dark); }
+    body.night::before { background: rgba(10,14,22,0.72); backdrop-filter: blur(2px); }
+    body.night.night-progamer::before { background: rgba(4,6,12,0.82); backdrop-filter: blur(1px); }
+    body.night.night-oled::before { background: rgba(0,0,0,0.92); backdrop-filter: none; }
 
-    table{ width: 96%; border-radius: 10px; }
-    th, td{ font-size: 13px; padding: 8px 6px; }
-    th{ top: 96px; } /* below wrapped navbar */
-    .status-badge{ min-width: 78px; padding: 4px 10px; }
-  }
+    /* ---------------------------
+       NAVBAR (with theme controls)
+       --------------------------- */
+    #topNav {
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        z-index: 50;
+
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        gap: 14px;
+        padding: 12px 16px;
+        background: var(--nav-bg);
+        color: #f3f4f6;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        backdrop-filter: blur(6px);
+    }
+
+    .nav-left, .nav-right {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        flex-wrap: wrap;
+    }
+
+    .nav-left a {
+        color: #f3f4f6;
+        text-decoration: none;
+        font-weight: 800;
+        letter-spacing: 0.2px;
+        font-size: 18px;
+    }
+    .nav-left a:hover { text-decoration: underline; }
+
+    .nav-ctrls {
+        display:flex;
+        align-items:center;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .nav-btn {
+        background: rgba(255,255,255,0.10);
+        color: #f9fafb;
+        border: 1px solid rgba(255,255,255,0.30);
+        border-radius: 10px;
+        padding: 8px 14px;
+        font-weight: 900;
+        cursor: pointer;
+        transition: transform .15s ease, background .15s ease, border-color .15s ease;
+        white-space: nowrap;
+    }
+    .nav-btn:hover { transform: translateY(-1px); background: rgba(255,255,255,0.14); }
+
+    .nav-select-wrap{
+        display:flex;
+        align-items:center;
+        gap: 10px;
+        padding: 6px 10px;
+        border-radius: 12px;
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.18);
+        white-space: nowrap;
+    }
+    .nav-select-wrap label{
+        font-size: 14px;
+        font-weight: 900;
+        color: #e5e7eb;
+    }
+    .nav-select-wrap select{
+        background: rgba(0,0,0,0.30);
+        color: #f9fafb;
+        border: 1px solid rgba(255,255,255,0.25);
+        border-radius: 10px;
+        padding: 8px 12px;
+        font-weight: 900;
+        outline: none;
+        cursor: pointer;
+        min-width: 130px;
+    }
+
+    /* Reserve space for fixed navbar */
+    .page-wrap{
+        padding-top: 74px;
+        padding-bottom: 26px;
+    }
+
+    h2 {
+        text-align: center;
+        margin: 18px auto 0;
+        font-size: 34px;
+        font-weight: 900;
+        text-shadow: 0 0 10px rgba(0,0,0,0.25);
+        padding: 0 14px;
+        line-height: 1.1;
+        max-width: 1050px;
+    }
+
+    #playerHint {
+        text-align: center;
+        font-size: 14px;
+        margin-top: 8px;
+        color: var(--muted-light);
+        padding: 0 14px;
+    }
+    body.night #playerHint { color: var(--muted-dark); }
+
+    /* Auto-Recommend Banner */
+    #bestBanner {
+        width: fit-content;
+        max-width: min(1050px, 95%);
+        margin: 14px auto 18px;
+        font-size: 26px;
+        font-weight: 900;
+        padding: 12px 20px;
+        border-radius: 14px;
+        background: rgba(0, 85, 0, 0.18);
+        color: #00b44b;
+        border: 2px solid rgba(0,255,0,0.50);
+        box-shadow: 0 0 18px rgba(0,255,0,0.35);
+        text-align: center;
+        display: none;
+        transition: background-color .4s, box-shadow .4s, color .4s;
+    }
+    body.night #bestBanner { background: rgba(0,255,0,0.10); color: #67ff79; }
+    body.night.night-oled #bestBanner { background: rgba(0,255,0,0.06); color: #4dff60; }
+
+    .winner-animate { animation: winnerPulse .9s ease-out; }
+    @keyframes winnerPulse {
+        0%{transform:scale(1);box-shadow:0 0 10px rgba(0,255,0,.35)}
+        50%{transform:scale(1.03);box-shadow:0 0 28px rgba(0,255,0,.75)}
+        100%{transform:scale(1);box-shadow:0 0 10px rgba(0,255,0,.35)}
+    }
+
+    .legend {
+        width: min(1050px, 92%);
+        margin: 10px auto 14px;
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 10px 18px;
+        padding: 0 10px;
+        font-weight: 900;
+    }
+    .legend-item { display: flex; gap: 10px; align-items: center; }
+    .legend-color {
+        width: 18px; height: 18px;
+        border-radius: 6px;
+        border: 1px solid rgba(0,0,0,0.35);
+    }
+    .legend-botty { background: #00b44b; }
+    .legend-average { background: #c6a75e; }
+    .legend-sweaty { background: #ff4d4d; }
+
+    #lastUpdated {
+        text-align:center;
+        margin: 10px 0 18px;
+        font-size: 15px;
+        font-weight: 800;
+        opacity: 0.95;
+        padding: 0 14px;
+    }
+
+    /* Table shell */
+    .table-wrap{
+        width: min(1100px, 93%);
+        margin: 0 auto;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+        border: 1px solid rgba(0,255,0,0.35);
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--card-bg);
+        color: var(--text-light);
+    }
+    body.night table { background: var(--card-bg-dark); color: #e8ecf7; }
+
+    th, td {
+        text-align: center;
+        padding: 14px 10px;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        font-size: 16px;
+        font-weight: 800;
+    }
+    th {
+        background: rgba(13,19,32,0.95);
+        color: #f9fafb;
+        letter-spacing: 0.3px;
+    }
+    body.night th { background: #111826; }
+
+    /* Heat-map rows */
+    tr.status-botty   { background-color: rgba(0,255,0,0.06); }
+    tr.status-average { background-color: rgba(255,215,0,0.05); }
+    tr.status-sweaty  { background-color: rgba(255,0,0,0.04); }
+
+    body.night tr.status-botty   { background-color: rgba(22,163,74,0.30); }
+    body.night tr.status-average { background-color: rgba(234,179,8,0.25); }
+    body.night tr.status-sweaty  { background-color: rgba(220,38,38,0.25); }
+
+    .status-badge {
+        display:inline-block;
+        padding: 6px 14px;
+        border-radius: 999px;
+        font-size: 0.85rem;
+        font-weight: 900;
+        letter-spacing: 0.6px;
+        min-width: 105px;
+    }
+    .status-badge-botty   { background: #00b44b; color: #fff; }
+    .status-badge-sweaty  { background: #ff4d4d; color: #fff; }
+    .status-badge-average { background: #c6a75e; color: #221a08; }
+
+    /* ✅ FIX: winner highlight WITHOUT affecting layout (no border overlap) */
+    .winner {
+        outline: 4px solid rgba(0,255,0,0.95);
+        outline-offset: -2px;
+        box-shadow: 0 0 18px rgba(0,255,0,0.55);
+        animation: pulse 2.2s infinite;
+    }
+    @keyframes pulse {
+        0%{box-shadow:0 0 10px rgba(0,255,0,0.35)}
+        50%{box-shadow:0 0 26px rgba(0,255,0,0.90)}
+        100%{box-shadow:0 0 10px rgba(0,255,0,0.35)}
+    }
+
+    /* ---------------------------
+       MOBILE FIXES (clean spacing)
+       --------------------------- */
+    @media (max-width: 740px) {
+        #topNav{
+            padding: 10px 12px;
+            gap: 10px;
+        }
+        .nav-left a { font-size: 16px; }
+        .nav-ctrls { gap: 8px; }
+        .nav-btn { padding: 7px 12px; border-radius: 10px; }
+        .nav-select-wrap { padding: 6px 8px; gap: 8px; }
+        .nav-select-wrap label { font-size: 13px; }
+        .nav-select-wrap select { padding: 7px 10px; min-width: 120px; }
+
+        .page-wrap{ padding-top: 86px; } /* more room for wrapped navbar */
+
+        h2 { font-size: 26px; margin-top: 10px; }
+        #bestBanner { font-size: 20px; padding: 10px 14px; }
+
+        th, td { font-size: 13px; padding: 10px 6px; }
+        .status-badge { min-width: 90px; padding: 5px 10px; font-size: 0.8rem; }
+    }
+
+    @media (max-width: 430px){
+        .nav-left { gap: 12px; }
+        .nav-ctrls { width: 100%; justify-content: space-between; }
+        .nav-right { width: 100%; }
+        .nav-btn { flex: 1; text-align:center; }
+        .nav-select-wrap { flex: 1; justify-content: space-between; }
+        .nav-select-wrap select { width: 100%; }
+        .legend { gap: 8px 14px; }
+    }
 </style>
 </head>
 
 <body>
 
 <div id="topNav">
-  <div class="nav-left">
-    <a href="/">Home</a>
-    <a href="/servers">Servers</a>
-    <a href="/dns">DNS</a>
-  </div>
-
-  <div class="nav-right">
-    <button id="nightToggle" type="button">Night Mode</button>
-
-    <div class="nightStyleWrap" aria-label="Night style selector">
-      <label for="nightStyle">Style</label>
-      <select id="nightStyle">
-        <option value="comfort">Comfort</option>
-        <option value="progamer">Pro Gamer</option>
-        <option value="oled">OLED</option>
-      </select>
+    <div class="nav-left">
+        <a href="/">Home</a>
+        <a href="/servers">Servers</a>
+        <a href="/dns">DNS</a>
     </div>
-  </div>
+
+    <div class="nav-right">
+        <div class="nav-ctrls">
+            <button id="nightToggle" class="nav-btn">Night Mode</button>
+
+            <div class="nav-select-wrap">
+                <label for="nightStyle">Style</label>
+                <select id="nightStyle">
+                    <option value="comfort">Comfort</option>
+                    <option value="progamer">Pro Gamer</option>
+                    <option value="oled">OLED</option>
+                </select>
+            </div>
+        </div>
+    </div>
 </div>
 
-<div class="page">
-  <h2>Global Botty Servers — Best for You Right Now 🌍</h2>
-  <div id="playerHint"></div>
-  <div id="bestBanner"></div>
+<div class="page-wrap">
+    <h2>Global Botty Servers — Best for You Right Now 🌍</h2>
+    <div id="playerHint"></div>
+    <div id="bestBanner"></div>
 
-  <div class="legend">
-    <div class="legend-item"><div class="legend-color legend-botty"></div> Botty</div>
-    <div class="legend-item"><div class="legend-color legend-average"></div> Average</div>
-    <div class="legend-item"><div class="legend-color legend-sweaty"></div> Sweaty</div>
-    <div class="legend-item" style="color:#00ff00">💚 Lowest Ping Highlight (non-sweaty)</div>
-  </div>
+    <div class="legend">
+        <div class="legend-item"><div class="legend-color legend-botty"></div> Botty</div>
+        <div class="legend-item"><div class="legend-color legend-average"></div> Average</div>
+        <div class="legend-item"><div class="legend-color legend-sweaty"></div> Sweaty</div>
+        <div class="legend-item" style="color:#00ff00">💚 Lowest Ping Highlight (non-sweaty)</div>
+    </div>
 
-  <div id="lastUpdated"></div>
+    <div id="lastUpdated"></div>
 
-  <table id="serverTable">
-    <tr>
-      <th>Server</th>
-      <th>Region</th>
-      <th>Status</th>
-      <th>Ping (ms)</th>
-      <th>Local Time</th>
-    </tr>
-  </table>
+    <div class="table-wrap">
+        <table id="serverTable">
+            <tr>
+                <th>Server</th>
+                <th>Region</th>
+                <th>Status</th>
+                <th>Ping (ms)</th>
+                <th>Local Time</th>
+            </tr>
+        </table>
+    </div>
 </div>
 
 <script>
@@ -384,63 +380,65 @@ let playerIP = null;
 
 /* Theme init */
 (function initTheme(){
-  const savedTheme = localStorage.getItem("theme");
-  const savedStyle = localStorage.getItem("nightStyle") || "comfort";
+    const savedTheme = localStorage.getItem("theme");
+    const savedStyle = localStorage.getItem("nightStyle") || "comfort";
 
-  const prefersDark = window.matchMedia &&
-    window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const prefersDark = window.matchMedia &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const hour = new Date().getHours();
+    const isNightByTime = (hour >= 20 || hour < 6);
 
-  const hour = new Date().getHours();
-  const isNightByTime = (hour >= 20 || hour < 6);
+    if (savedTheme === "night" ||
+        (!savedTheme && prefersDark) ||
+        (!savedTheme && isNightByTime)) {
+        document.body.classList.add("night");
+        document.body.classList.add("night-" + savedStyle);
+    }
+    nightStyle.value = savedStyle;
 
-  if (savedTheme === "night" || (!savedTheme && (prefersDark || isNightByTime))) {
-    document.body.classList.add("night");
-    document.body.classList.add("night-" + savedStyle);
-  }
-
-  nightStyle.value = savedStyle;
-  nightBtn.textContent = document.body.classList.contains("night") ? "Light Mode" : "Night Mode";
+    nightBtn.textContent = document.body.classList.contains("night")
+        ? "Light Mode"
+        : "Night Mode";
 })();
 
-nightBtn.addEventListener("click", () => {
-  const state = document.body.classList.toggle("night");
-  localStorage.setItem("theme", state ? "night" : "day");
+nightBtn.addEventListener("click",()=>{
+    const state = document.body.classList.toggle("night");
+    localStorage.setItem("theme", state ? "night" : "day");
 
-  STYLES.forEach(s => document.body.classList.remove("night-"+s));
-  if (state) {
-    const savedStyle = localStorage.getItem("nightStyle") || "comfort";
-    document.body.classList.add("night-" + savedStyle);
-  }
+    STYLES.forEach(s=>document.body.classList.remove("night-"+s));
+    if (state) {
+        const savedStyle = localStorage.getItem("nightStyle") || "comfort";
+        document.body.classList.add("night-" + savedStyle);
+    }
 
-  nightBtn.textContent = state ? "Light Mode" : "Night Mode";
+    nightBtn.textContent = state ? "Light Mode" : "Night Mode";
 });
 
-nightStyle.addEventListener("change", () => {
-  STYLES.forEach(s => document.body.classList.remove("night-"+s));
-  if (document.body.classList.contains("night")) {
-    document.body.classList.add("night-"+nightStyle.value);
-  }
-  localStorage.setItem("nightStyle", nightStyle.value);
+nightStyle.addEventListener("change",()=>{
+    STYLES.forEach(s=>document.body.classList.remove("night-"+s));
+    if(document.body.classList.contains("night"))
+        document.body.classList.add("night-"+nightStyle.value);
+    localStorage.setItem("nightStyle", nightStyle.value);
 });
 
 /* Player IP / region hint */
 async function loadPlayerMeta() {
-  try {
-    const res = await fetch("/api/player");
-    const meta = await res.json();
-    playerRegion = meta.region || null;
-    playerTimezone = meta.timezone || null;
-    playerIP = meta.ip || null;
+    try {
+        const res = await fetch("/api/player");
+        const meta = await res.json();
+        playerRegion = meta.region || null;
+        playerTimezone = meta.timezone || null;
+        playerIP = meta.ip || null;
 
-    const hint = document.getElementById("playerHint");
-    if (playerRegion && playerTimezone) {
-      hint.textContent = `We think you're in: ${playerRegion} (TZ: ${playerTimezone}) • Sorted toward nearby, less sweaty servers.`;
-    } else {
-      hint.textContent = `Could not detect your region. Showing global ranking by lobby chill → sweat.`;
+        const hint = document.getElementById("playerHint");
+        if (playerRegion && playerTimezone) {
+            hint.textContent = `We think you're in: ${playerRegion} (TZ: ${playerTimezone}) • Sorted toward nearby, less sweaty servers.`;
+        } else {
+            hint.textContent = `Could not detect your region. Showing global ranking by lobby chill → sweat.`;
+        }
+    } catch (e) {
+        console.error("Failed to load player meta:", e);
     }
-  } catch (e) {
-    console.error("Failed to load player meta:", e);
-  }
 }
 
 /* Sorting:
@@ -449,110 +447,114 @@ async function loadPlayerMeta() {
    3) Then lowest ping
 */
 function sortServers(servers) {
-  const rank = { "botty": 0, "average": 1, "sweaty": 2 };
+    const rank = { "botty": 0, "average": 1, "sweaty": 2 };
 
-  return servers.sort((a, b) => {
-    const sa = (a.status || "").toLowerCase();
-    const sb = (b.status || "").toLowerCase();
+    return servers.sort((a, b) => {
+        const sa = (a.status || "").toLowerCase();
+        const sb = (b.status || "").toLowerCase();
 
-    const ra = rank[sa] ?? 99;
-    const rb = rank[sb] ?? 99;
-    if (ra !== rb) return ra - rb;
+        const ra = rank[sa] ?? 99;
+        const rb = rank[sb] ?? 99;
 
-    if (playerRegion) {
-      const regionScoreA = (a.region === playerRegion) ? 0 : 1;
-      const regionScoreB = (b.region === playerRegion) ? 0 : 1;
-      if (regionScoreA !== regionScoreB) return regionScoreA - regionScoreB;
-    }
+        if (ra !== rb) return ra - rb;
 
-    return (a.ping ?? 9999) - (b.ping ?? 9999);
-  });
+        if (playerRegion) {
+            const regionScoreA = (a.region === playerRegion) ? 0 : 1;
+            const regionScoreB = (b.region === playerRegion) ? 0 : 1;
+            if (regionScoreA !== regionScoreB) return regionScoreA - regionScoreB;
+        }
+
+        return a.ping - b.ping;
+    });
 }
 
 /* Auto-Recommend Banner */
 function updateAutoRecommendBanner(server) {
-  const banner = document.getElementById("bestBanner");
-  if (!server) return;
+    const banner = document.getElementById("bestBanner");
+    if (!server) return;
 
-  banner.textContent = `🟢 Best Server Right Now: ${server.name} (${server.region}) — ${server.ping} ms`;
-  banner.style.display = "block";
+    banner.textContent = `🟢 Best Server Right Now: ${server.name} (${server.region}) — ${server.ping} ms`;
+    banner.style.display = "block";
 
-  if (server.name !== lastBannerWinner) {
-    banner.classList.remove("winner-animate");
-    void banner.offsetWidth; // restart CSS animation
-    banner.classList.add("winner-animate");
-    lastBannerWinner = server.name;
-  }
+    if (server.name !== lastBannerWinner) {
+        banner.classList.remove("winner-animate");
+        void banner.offsetWidth; // restart CSS animation
+        banner.classList.add("winner-animate");
+        lastBannerWinner = server.name;
+    }
 }
 
 /* Fetch & render */
 async function fetchServerData() {
-  try {
-    const res = await fetch("/api/status");
-    let servers = await res.json();
-    const table = document.getElementById("serverTable");
+    try {
+        const res = await fetch("/api/status");
+        let servers = await res.json();
+        const table = document.getElementById("serverTable");
 
-    servers = sortServers(Array.isArray(servers) ? servers : []);
+        servers = sortServers(servers);
 
-    table.innerHTML = `
-      <tr>
-        <th>Server</th>
-        <th>Region</th>
-        <th>Status</th>
-        <th>Ping (ms)</th>
-        <th>Local Time</th>
-      </tr>
-    `;
+        table.innerHTML = `
+            <tr>
+                <th>Server</th>
+                <th>Region</th>
+                <th>Status</th>
+                <th>Ping (ms)</th>
+                <th>Local Time</th>
+            </tr>
+        `;
 
-    if (!servers.length) {
-      document.getElementById("lastUpdated").textContent = "No server data available.";
-      return;
+        if (!servers.length) {
+            document.getElementById("lastUpdated").textContent =
+                "No server data available.";
+            return;
+        }
+
+        const bestServer = servers[0];
+        const bestPing = bestServer.ping;
+        updateAutoRecommendBanner(bestServer);
+
+        servers.forEach(s => {
+            const row = table.insertRow();
+
+            const statusLower = (s.status || "").toLowerCase();
+            const isSweaty = statusLower === "sweaty";
+
+            // Heat-map class
+            row.classList.add(
+                statusLower === "botty"   ? "status-botty" :
+                statusLower === "sweaty"  ? "status-sweaty" :
+                                            "status-average"
+            );
+
+            // Winner highlight only if not sweaty and has best ping
+            if (s.ping === bestPing && !isSweaty) {
+                row.classList.add("winner");
+            }
+
+            let emoji = "🟡";
+            if (statusLower === "botty") emoji = "🟢";
+            else if (statusLower === "sweaty") emoji = "🔴";
+
+            row.insertCell(0).textContent = `${emoji} ${s.name}`;
+            row.insertCell(1).textContent = s.region || "-";
+
+            const badge = document.createElement("span");
+            badge.className = "status-badge " +
+                (statusLower === "botty" ? "status-badge-botty" :
+                 statusLower === "sweaty" ? "status-badge-sweaty" :
+                                            "status-badge-average");
+            badge.textContent = (s.status || "").toUpperCase();
+            row.insertCell(2).appendChild(badge);
+
+            row.insertCell(3).textContent = s.ping;
+            row.insertCell(4).textContent = s.local_time;
+        });
+
+        document.getElementById("lastUpdated").textContent =
+            "Last updated: " + new Date().toLocaleTimeString();
+    } catch (e) {
+        console.error(e);
     }
-
-    const bestServer = servers[0];
-    const bestPing = bestServer.ping;
-    updateAutoRecommendBanner(bestServer);
-
-    servers.forEach(s => {
-      const row = table.insertRow();
-
-      const statusLower = (s.status || "").toLowerCase();
-      const isSweaty = statusLower === "sweaty";
-
-      row.classList.add(
-        statusLower === "botty" ? "status-botty" :
-        statusLower === "sweaty" ? "status-sweaty" :
-        "status-average"
-      );
-
-      if (s.ping === bestPing && !isSweaty) row.classList.add("winner");
-
-      let emoji = "🟡";
-      if (statusLower === "botty") emoji = "🟢";
-      else if (statusLower === "sweaty") emoji = "🔴";
-
-      row.insertCell(0).textContent = `${emoji} ${s.name}`;
-      row.insertCell(1).textContent = s.region || "-";
-
-      const badge = document.createElement("span");
-      badge.className = "status-badge " + (
-        statusLower === "botty" ? "status-badge-botty" :
-        statusLower === "sweaty" ? "status-badge-sweaty" :
-        "status-badge-average"
-      );
-      badge.textContent = (s.status || "").toUpperCase();
-      row.insertCell(2).appendChild(badge);
-
-      row.insertCell(3).textContent = s.ping;
-      row.insertCell(4).textContent = s.local_time;
-    });
-
-    document.getElementById("lastUpdated").textContent =
-      "Last updated: " + new Date().toLocaleTimeString();
-
-  } catch (e) {
-    console.error(e);
-  }
 }
 
 loadPlayerMeta();
