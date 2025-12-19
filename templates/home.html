@@ -7,7 +7,7 @@
 
 <style>
   :root{
-    --nav-h: 64px;
+    --nav-h: 64px; /* fallback until JS measures actual nav height */
 
     --text-light: #0b1220;
     --text-dark:  #f9fafb;
@@ -137,7 +137,7 @@
      ========================= */
   header{
     text-align:center;
-    padding: calc(var(--nav-h) + 26px) 15px 0; /* ✅ uses navbar height */
+    padding: calc(var(--nav-h) + 26px) 15px 0; /* ✅ uses measured navbar height */
   }
   header h1{
     font-size:44px;
@@ -222,8 +222,7 @@
      MOBILE spacing (clean + breathable)
      ========================= */
   @media (max-width: 740px){
-    :root{ --nav-h: 92px; } /* ✅ navbar wraps -> reserve more */
-
+    /* ✅ no manual nav height guessing — JS measures real height */
     #topNav{
       grid-template-columns: 1fr;
       justify-items:center;
@@ -296,6 +295,27 @@
     </div>
   </div>
 </div>
+
+<!-- ✅ FIX 1: Auto-sync CSS --nav-h to REAL navbar height -->
+<script>
+(function syncNavHeight(){
+  const nav = document.getElementById("topNav");
+  if (!nav) return;
+
+  const set = () => {
+    const h = nav.getBoundingClientRect().height;
+    document.documentElement.style.setProperty("--nav-h", Math.ceil(h) + "px");
+  };
+
+  set();
+  window.addEventListener("resize", set);
+  window.addEventListener("orientationchange", set);
+
+  // help after fonts/layout settle
+  setTimeout(set, 50);
+  setTimeout(set, 250);
+})();
+</script>
 
 <header>
   <h1>Heat Rank</h1>
