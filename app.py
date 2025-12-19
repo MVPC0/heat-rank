@@ -7,6 +7,11 @@ import threading
 
 app = Flask(__name__)
 
+@app.route("/health")
+def health():
+    return "ok", 200
+
+
 # ------------------------------------------------------
 # Servers + DNS + region tag
 # (Original servers + extra popular game regions)
