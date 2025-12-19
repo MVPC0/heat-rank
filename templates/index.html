@@ -7,7 +7,7 @@
 
 <style>
   :root{
-    --nav-h: 64px;
+    --nav-h: 64px; /* fallback until JS measures actual nav height */
 
     --text-light: #000000;
     --text-dark: #f9fafb;
@@ -85,6 +85,7 @@
     text-decoration:none;
     font-weight: 900;
     letter-spacing: .2px;
+    white-space: nowrap;
   }
   .nav-center a:hover{ text-decoration: underline; }
 
@@ -285,8 +286,7 @@
 
   /* Mobile */
   @media (max-width: 740px){
-    :root{ --nav-h: 92px; } /* navbar will wrap, reserve more height */
-
+    /* ✅ no hardcoded nav height */
     #topNav{
       grid-template-columns: 1fr; /* stack */
       justify-items: center;
@@ -327,6 +327,27 @@
       </div>
     </div>
   </div>
+
+  <!-- ✅ FIX 1: Auto-sync CSS --nav-h to REAL navbar height -->
+  <script>
+  (function syncNavHeight(){
+    const nav = document.getElementById("topNav");
+    if (!nav) return;
+
+    const set = () => {
+      const h = nav.getBoundingClientRect().height;
+      document.documentElement.style.setProperty("--nav-h", Math.ceil(h) + "px");
+    };
+
+    set();
+    window.addEventListener("resize", set);
+    window.addEventListener("orientationchange", set);
+
+    // help after layout settles
+    setTimeout(set, 50);
+    setTimeout(set, 250);
+  })();
+  </script>
 
   <div class="page-wrap">
     <h2>Global Botty Servers — Best for You Right Now 🌍</h2>
@@ -392,6 +413,13 @@ nightStyle.addEventListener("change",()=>{
   if(document.body.classList.contains("night"))
     document.body.classList.add("night-"+nightStyle.value);
   localStorage.setItem("nightStyle", nightStyle.value);
+
+  // style change can affect nav height slightly (wrap)
+  const nav = document.getElementById("topNav");
+  if (nav) {
+    const h = nav.getBoundingClientRect().height;
+    document.documentElement.style.setProperty("--nav-h", Math.ceil(h) + "px");
+  }
 });
 
 async function loadPlayerMeta() {
