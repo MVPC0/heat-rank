@@ -6,201 +6,329 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-    body {
-        margin:0; padding:0;
-        font-family: Arial, sans-serif;
-        background-image: url("/static/background.jpg");
-        background-size: cover;
-        background-position: center;
-        background-attachment: fixed;
-        transition: background-color .4s, color .4s;
-        color: #000000;
+  :root{
+    --text-light: #0b1220;
+    --text-dark:  #f9fafb;
+
+    --nav-bg: rgba(0,0,0,0.55);
+  }
+
+  body{
+    margin:0;
+    padding:0;
+    font-family: Arial, sans-serif;
+    background-image: url("/static/background.jpg");
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    transition: background-color .4s, color .4s;
+    color: var(--text-light);
+  }
+  body::before{
+    content:"";
+    position:fixed; top:0; left:0;
+    width:100%; height:100%;
+    background: rgba(255,255,255,0.42);
+    z-index:-1;
+    transition: background .4s;
+  }
+
+  /* Night theme */
+  body.night{ color: var(--text-dark); }
+  body.night::before{ background: rgba(10,14,22,.75); backdrop-filter: blur(2px); }
+  body.night.night-progamer::before{ background: rgba(4,7,12,.83); }
+  body.night.night-oled::before{ background: rgba(0,0,0,.92); }
+
+  /* =========================
+     NAVBAR (theme controls inside)
+     ========================= */
+  #topNav{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:10px 14px;
+    background: var(--nav-bg);
+    color:#f9fafb;
+    font-weight:800;
+    position:fixed;
+    top:0; left:0; right:0;
+    z-index:50;
+    backdrop-filter: blur(6px);
+  }
+
+  .nav-left{
+    display:flex;
+    align-items:center;
+    gap:18px;
+    flex-wrap:wrap;
+  }
+
+  #topNav a{
+    color:#f9fafb;
+    text-decoration:none;
+    font-weight:900;
+    letter-spacing:.2px;
+  }
+  #topNav a:hover{ text-decoration:underline; }
+
+  .nav-right{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+  }
+
+  #nightToggle{
+    background: rgba(255,255,255,0.12);
+    color:#fff;
+    padding:8px 12px;
+    border-radius:10px;
+    border:1px solid rgba(255,255,255,0.45);
+    cursor:pointer;
+    font-weight:900;
+    line-height:1;
+    white-space:nowrap;
+  }
+  #nightToggle:hover{ background: rgba(255,255,255,0.18); }
+
+  .nightStyleWrap{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:6px 10px;
+    border-radius:10px;
+    border:1px solid rgba(255,255,255,0.28);
+    background: rgba(255,255,255,0.10);
+    color:#f3f4f6;
+    font-size:12px;
+    font-weight:900;
+    white-space:nowrap;
+  }
+  .nightStyleWrap label{ opacity:.95; }
+
+  #nightStyle{
+    border-radius:8px;
+    padding:6px 8px;
+    border:1px solid rgba(255,255,255,0.35);
+    background: rgba(0,0,0,0.25);
+    color:#f9fafb;
+    font-weight:900;
+    outline:none;
+    cursor:pointer;
+  }
+  body:not(.night) #nightStyle{
+    background: rgba(255,255,255,0.18);
+    color:#ffffff;
+  }
+
+  /* =========================
+     PAGE
+     ========================= */
+  header{
+    text-align:center;
+    padding: 90px 15px 0; /* room for fixed navbar */
+  }
+  header h1{
+    font-size:44px;
+    font-weight:900;
+    margin: 0 0 10px;
+    text-shadow:0 0 8px rgba(0,0,0,.3);
+  }
+  header p{
+    font-size:18px;
+    max-width: 720px;
+    margin: 10px auto 30px;
+    opacity:.95;
+    line-height:1.55;
+  }
+
+  .btn-row{
+    display:flex;
+    justify-content:center;
+    gap:18px;
+    flex-wrap:wrap;
+    margin: 8px 12px 50px;
+  }
+  .big-btn{
+    padding:14px 26px;
+    font-size:19px;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    font-weight:900;
+    color:#fff;
+    transition: transform .2s, box-shadow .2s;
+    text-decoration:none;
+    display:inline-block;
+  }
+  .big-btn:hover{
+    transform:scale(1.04);
+    box-shadow:0 0 14px rgba(0,0,0,.35);
+  }
+  .btn-map{ background:#2563eb; }
+  .btn-dns{ background:#0d9488; }
+
+  section{
+    max-width:960px;
+    margin: 0 auto 35px;
+    background: rgba(255,255,255,.91);
+    border-radius:14px;
+    padding: 25px 28px;
+    box-shadow:0 4px 12px rgba(0,0,0,.25);
+    color:#111827;
+  }
+  section h2{
+    text-align:center;
+    font-size:28px;
+    font-weight:900;
+    margin: 0 0 15px;
+  }
+  ul.features{
+    list-style:none;
+    padding:0;
+    margin:0;
+    font-size:17px;
+    line-height:1.7;
+  }
+  ul.features li{
+    margin: 10px 0;
+  }
+  ul.features li::before{
+    content:"🔥";
+    margin-right:8px;
+  }
+
+  footer{
+    text-align:center;
+    font-size:14px;
+    margin: 40px 0 20px;
+    opacity:.9;
+    padding: 0 12px;
+  }
+
+  body.night section{
+    background: rgba(11,15,22,.92);
+    color:#e5e7eb;
+  }
+  body.night footer{ color:#e5e7eb; }
+
+  /* =========================
+     MOBILE spacing (clean + breathable)
+     ========================= */
+  @media (max-width: 640px){
+    #topNav{
+      padding: 10px 10px;
+      gap: 10px;
     }
-    body::before {
-        content:"";
-        position:fixed; top:0; left:0;
-        width:100%; height:100%;
-        background:rgba(255,255,255,0.42);
-        z-index:-1;
-        transition:background .4s;
+    .nav-left{ gap: 12px; }
+    .nav-right{
+      width: 100%;
+      justify-content: center;
+      gap: 10px;
     }
 
-    body.night {
-        color: #f9fafb;
+    header{
+      padding-top: 132px; /* navbar wraps to 2 rows */
     }
-    body.night::before { background:rgba(10,14,22,.75); backdrop-filter:blur(2px); }
-    body.night.night-progamer::before { background:rgba(4,7,12,.83); }
-    body.night.night-oled::before { background:rgba(0,0,0,.92); }
-
-    #nightToggle {
-        position:fixed; top:15px; right:15px;
-        padding:10px 18px;
-        border-radius:8px; border:2px solid #fff;
-        background:#222; color:#fff; cursor:pointer;
-        font-weight:bold; z-index:99;
+    header h1{ font-size: 32px; }
+    header p{
+      font-size: 15px;
+      margin: 10px auto 22px;
+      padding: 0 6px;
+      line-height: 1.6;
     }
 
-    #nightStyleWrapper {
-        position:fixed; top:60px; right:15px;
-        padding:6px 10px;
-        background:rgba(255,255,255,0.85);
-        border-radius:8px;
-        font-size:12px;
-        z-index:98;
+    .btn-row{
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .big-btn{
+      width: min(520px, 92vw);
+      text-align:center;
+      font-size: 16px;
+      padding: 12px 16px;
+      border-radius: 12px;
     }
 
-    #topNav {
-        display:flex;
-        justify-content:center;
-        gap:20px;
-        padding:10px 0;
-        background:rgba(0,0,0,0.55);
-        color:#f9fafb;
-        font-weight:600;
-        position:fixed;
-        top:0; left:0; right:0;
-        z-index:50;
+    section{
+      width: 92%;
+      padding: 18px 16px;
+      border-radius: 12px;
+      margin-bottom: 18px;
     }
-    #topNav a {
-        color:#f9fafb;
-        text-decoration:none;
+    section h2{
+      font-size: 20px;
+      margin-bottom: 10px;
     }
-    #topNav a:hover { text-decoration:underline; }
-
-    header {
-        text-align:center;
-        margin-top:80px;
-        padding:80px 15px 0;
+    ul.features{
+      font-size: 14px;
+      line-height: 1.7;
     }
-    header h1 {
-        font-size:44px;
-        font-weight:900;
-        margin-bottom:10px;
-        text-shadow:0 0 8px rgba(0,0,0,.3);
-    }
-    header p {
-        font-size:18px;
-        max-width:640px;
-        margin:10px auto 30px;
-        opacity:.95;
-    }
-
-    .btn-row {
-        display:flex;
-        justify-content:center;
-        gap:18px;
-        flex-wrap:wrap;
-        margin-bottom:50px;
-    }
-    .big-btn {
-        padding:14px 26px;
-        font-size:19px;
-        border:none;
-        border-radius:9px;
-        cursor:pointer;
-        font-weight:900;
-        color:#fff;
-        transition:transform .2s, box-shadow .2s;
-        text-decoration:none;
-        display:inline-block;
-    }
-    .big-btn:hover { transform:scale(1.04); box-shadow:0 0 14px rgba(0,0,0,.35); }
-    .btn-map { background:#2563eb; }
-    .btn-dns { background:#0d9488; }
-
-    section {
-        max-width:960px;
-        margin:auto;
-        background:rgba(255,255,255,.91);
-        border-radius:14px;
-        padding:25px 28px;
-        box-shadow:0 4px 12px rgba(0,0,0,.25);
-        margin-bottom:35px;
-        color:#111827;
-    }
-    section h2 {
-        text-align:center;
-        font-size:28px;
-        font-weight:900;
-        margin-bottom:15px;
-    }
-    ul.features {
-        list-style:none;
-        padding:0;
-        font-size:17px;
-        line-height:1.7;
-    }
-    ul.features li::before {
-        content:"🔥";
-        margin-right:8px;
-    }
-
-    footer {
-        text-align:center;
-        font-size:14px;
-        margin:40px 0 20px;
-        opacity:.9;
-    }
-
-    body.night section { background:rgba(11,15,22,.92); color:#e5e7eb; }
-    body.night footer { color:#e5e7eb; }
+    ul.features li{ margin: 8px 0; }
+  }
 </style>
 </head>
 <body>
 
 <div id="topNav">
+  <div class="nav-left">
     <a href="/">Home</a>
     <a href="/servers">Servers</a>
     <a href="/dns">DNS</a>
-</div>
+  </div>
 
-<button id="nightToggle">Night Mode</button>
-<div id="nightStyleWrapper">
-    <label>Night style:</label>
-    <select id="nightStyle">
+  <div class="nav-right">
+    <button id="nightToggle" type="button">Night Mode</button>
+    <div class="nightStyleWrap">
+      <label for="nightStyle">Style</label>
+      <select id="nightStyle">
         <option value="comfort">Comfort</option>
         <option value="progamer">Pro Gamer</option>
         <option value="oled">OLED</option>
-    </select>
+      </select>
+    </div>
+  </div>
 </div>
 
 <header>
-    <h1>Heat Rank</h1>
-    <p>
-        The fastest way to find <strong>botty-lobby servers</strong> and smarter DNS
-        for real-time games like <strong>PUBG, Warzone, Apex, Fortnite</strong> and more —
-        using live ping, time-of-day, holidays, and regional sweat patterns.
-    </p>
+  <h1>Heat Rank</h1>
+  <p>
+    The fastest way to find <strong>botty-lobby servers</strong> and smarter DNS
+    for real-time games like <strong>PUBG, Warzone, Apex, Fortnite</strong> and more —
+    using live ping, time-of-day, holidays, and regional sweat patterns.
+  </p>
 </header>
 
 <div class="btn-row">
-    <a href="/servers" class="big-btn btn-map">🔥 View Live Heat Map</a>
-    <a href="/dns" class="big-btn btn-dns">🌐 DNS Recommendations</a>
+  <a href="/servers" class="big-btn btn-map">🔥 View Live Heat Map</a>
+  <a href="/dns" class="big-btn btn-dns">🌐 DNS Recommendations</a>
 </div>
 
 <section>
-    <h2>What Heat Rank Does</h2>
-    <ul class="features">
-        <li>Live ping testing across major game regions (NA, EU, SA, APAC, MEA, Oceania)</li>
-        <li>Predicts <strong>Botty / Average / Sweaty</strong> based on ping, population patterns, and time-of-day</li>
-        <li>Auto-recommends the <strong>best server right now</strong> based on your IP region</li>
-        <li>Ranks servers from easiest → sweatiest globally</li>
-        <li>Smart DNS suggestions for better routing (not matchmaking forcing)</li>
-    </ul>
+  <h2>What Heat Rank Does</h2>
+  <ul class="features">
+    <li>Live ping testing across major game regions (NA, EU, SA, APAC, MEA, Oceania)</li>
+    <li>Predicts <strong>Botty / Average / Sweaty</strong> based on ping, population patterns, and time-of-day</li>
+    <li>Auto-recommends the <strong>best server right now</strong> based on your IP region</li>
+    <li>Ranks servers from easiest → sweatiest globally</li>
+    <li>Smart DNS suggestions for better routing (not matchmaking forcing)</li>
+  </ul>
 </section>
 
 <section>
-    <h2>Who Is It For?</h2>
-    <ul class="features">
-        <li>Players hunting for calmer, botty-style lobbies</li>
-        <li>Gamers with unstable ping or weird routes</li>
-        <li>Streamers who want predictable matches</li>
-        <li>Competitive grinders practicing in other regions</li>
-    </ul>
+  <h2>Who Is It For?</h2>
+  <ul class="features">
+    <li>Players hunting for calmer, botty-style lobbies</li>
+    <li>Gamers with unstable ping or weird routes</li>
+    <li>Streamers who want predictable matches</li>
+    <li>Competitive grinders practicing in other regions</li>
+  </ul>
 </section>
 
 <footer>
-    Made by MVP Production — Enjoy the botty servers 💚
+  Made by MVP Production — Enjoy the botty servers 💚
 </footer>
 
 <script>
@@ -209,32 +337,32 @@ const nightStyle = document.getElementById("nightStyle");
 const STYLES = ["comfort","progamer","oled"];
 
 (function initTheme(){
-    const savedTheme = localStorage.getItem("theme");
-    const savedStyle = localStorage.getItem("nightStyle") || "comfort";
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const hour = new Date().getHours();
-    const autoNight = hour >= 20 || hour < 6;
+  const savedTheme = localStorage.getItem("theme");
+  const savedStyle = localStorage.getItem("nightStyle") || "comfort";
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const hour = new Date().getHours();
+  const autoNight = hour >= 20 || hour < 6;
 
-    if (savedTheme === "night" || (!savedTheme && (prefersDark || autoNight))) {
-        document.body.classList.add("night","night-"+savedStyle);
-    }
-    nightStyle.value = savedStyle;
-    nightBtn.textContent = document.body.classList.contains("night") ? "Light Mode" : "Night Mode";
+  if (savedTheme === "night" || (!savedTheme && (prefersDark || autoNight))) {
+    document.body.classList.add("night","night-"+savedStyle);
+  }
+  nightStyle.value = savedStyle;
+  nightBtn.textContent = document.body.classList.contains("night") ? "Light Mode" : "Night Mode";
 })();
 
 nightBtn.addEventListener("click",()=>{
-    const night = document.body.classList.toggle("night");
-    localStorage.setItem("theme", night ? "night" : "day");
-    STYLES.forEach(s=>document.body.classList.remove("night-"+s));
-    if (night) document.body.classList.add("night-"+nightStyle.value);
-    nightBtn.textContent = night ? "Light Mode" : "Night Mode";
+  const night = document.body.classList.toggle("night");
+  localStorage.setItem("theme", night ? "night" : "day");
+  STYLES.forEach(s=>document.body.classList.remove("night-"+s));
+  if (night) document.body.classList.add("night-"+nightStyle.value);
+  nightBtn.textContent = night ? "Light Mode" : "Night Mode";
 });
 
 nightStyle.addEventListener("change",()=>{
-    STYLES.forEach(s=>document.body.classList.remove("night-"+s));
-    if(document.body.classList.contains("night"))
-        document.body.classList.add("night-"+nightStyle.value);
-    localStorage.setItem("nightStyle", nightStyle.value);
+  STYLES.forEach(s=>document.body.classList.remove("night-"+s));
+  if(document.body.classList.contains("night"))
+    document.body.classList.add("night-"+nightStyle.value);
+  localStorage.setItem("nightStyle", nightStyle.value);
 });
 </script>
 
