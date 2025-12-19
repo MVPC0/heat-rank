@@ -7,8 +7,11 @@
 
 <style>
   :root{
+    --nav-h: 64px;
+
     --text-light:#0b1220;
     --text-dark:#f9fafb;
+
     --nav-bg: rgba(0,0,0,0.55);
   }
 
@@ -29,41 +32,37 @@
   }
   body::before{
     content:"";
-    position:fixed;
-    top:0; left:0;
-    width:100%; height:100%;
+    position:fixed; inset:0;
     background: rgba(255,255,255,0.45);
     z-index:-1;
     transition: background 0.5s ease;
   }
 
-  /* Night theme */
   body.night{ color: var(--text-dark); }
   body.night::before{ background: rgba(10,14,22,0.72); backdrop-filter: blur(2px); }
   body.night.night-progamer::before{ background: rgba(4,6,12,0.82); backdrop-filter: blur(1px); }
   body.night.night-oled::before{ background: rgba(0,0,0,0.92); backdrop-filter: none; }
 
-  /* =========================
-     NAVBAR (CENTER LINKS + RIGHT CONTROLS)
-     ========================= */
+  /* NAVBAR (true centered) */
   #topNav{
-    position:fixed;
+    position: fixed;
     top:0; left:0; right:0;
-    z-index:50;
+    z-index: 50;
 
     display:grid;
     grid-template-columns: 1fr auto 1fr;
     align-items:center;
 
-    gap:12px;
-    padding:10px 14px;
+    min-height: var(--nav-h);
+    padding: 10px 14px;
     background: var(--nav-bg);
     color:#f3f4f6;
     font-weight:900;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
     backdrop-filter: blur(6px);
+    gap: 10px;
   }
-
-  .nav-spacer{ min-height:1px; }
+  .nav-spacer{ height:1px; }
 
   .nav-center{
     display:flex;
@@ -72,15 +71,13 @@
     gap:18px;
     flex-wrap:wrap;
   }
-
-  #topNav a{
+  .nav-center a{
     color:#f3f4f6;
     text-decoration:none;
     font-weight:900;
     letter-spacing:.2px;
-    white-space:nowrap;
   }
-  #topNav a:hover{ text-decoration:underline; }
+  .nav-center a:hover{ text-decoration:underline; }
 
   .nav-right{
     display:flex;
@@ -90,7 +87,7 @@
     flex-wrap:wrap;
   }
 
-  #nightToggle{
+  .nav-btn{
     background: rgba(255,255,255,0.12);
     color:#fff;
     padding:8px 12px;
@@ -98,17 +95,16 @@
     border:1px solid rgba(255,255,255,0.45);
     cursor:pointer;
     font-weight:900;
-    line-height:1;
     white-space:nowrap;
   }
-  #nightToggle:hover{ background: rgba(255,255,255,0.18); }
+  .nav-btn:hover{ background: rgba(255,255,255,0.18); }
 
   .nightStyleWrap{
     display:flex;
     align-items:center;
     gap:8px;
     padding:6px 10px;
-    border-radius:10px;
+    border-radius:12px;
     border:1px solid rgba(255,255,255,0.28);
     background: rgba(255,255,255,0.10);
     color:#f3f4f6;
@@ -116,24 +112,27 @@
     font-weight:900;
     white-space:nowrap;
   }
-
   #nightStyle{
-    border-radius:8px;
-    padding:6px 8px;
+    border-radius:10px;
+    padding:7px 10px;
     border:1px solid rgba(255,255,255,0.35);
     background: rgba(0,0,0,0.25);
     color:#f9fafb;
     font-weight:900;
     outline:none;
     cursor:pointer;
+    min-width: 130px;
   }
 
-  /* =========================
-     PAGE HEADER + TEXT
-     ========================= */
+  /* Page spacing */
+  .page-wrap{
+    padding-top: calc(var(--nav-h) + 12px);
+    padding-bottom: 26px;
+  }
+
   h2{
     text-align:center;
-    margin: 88px 10px 8px; /* room for fixed navbar */
+    margin: 14px 10px 8px;
     font-size: 28px;
     font-weight: 900;
     text-shadow: 0 0 6px rgba(0,0,0,0.3);
@@ -169,14 +168,8 @@
     text-align: center;
     color:#111827;
   }
-  #dnsCard h3{
-    margin: 0 0 6px;
-    font-size: 22px;
-  }
-  #dnsCard p{
-    margin: 4px 0;
-    font-size: 15px;
-  }
+  #dnsCard h3{ margin: 0 0 6px; font-size: 22px; }
+  #dnsCard p{ margin: 4px 0; font-size: 15px; }
 
   .dns-line{
     display:flex;
@@ -236,7 +229,6 @@
     font-weight: 900;
   }
 
-  /* Night-specific components */
   body.night #dnsCard{ background: rgba(15,23,42,0.96); color: #e8ecf7; }
   body.night #dnsDisclaimer{
     background: rgba(30,64,175,0.25);
@@ -247,50 +239,26 @@
   body.night th{ background:#0f172a !important; }
   body.night .dns-value{ background: rgba(255,255,255,0.10); }
 
-  /* =========================
-     MOBILE spacing (clean + breathable)
-     ========================= */
   @media (max-width: 740px){
+    :root{ --nav-h: 92px; }
+
     #topNav{
       grid-template-columns: 1fr;
-      justify-items:center;
-      gap:10px;
-      padding:10px 10px;
-    }
-    .nav-right{
-      width: 100%;
-      justify-content: center;
+      justify-items: center;
       gap: 10px;
+      padding: 10px 12px;
     }
+    .nav-spacer{ display:none; }
+    .nav-right{ justify-content:center; }
 
-    h2{
-      margin-top: 132px; /* navbar wraps */
-      font-size: 22px;
-    }
+    h2{ font-size: 22px; margin-top: 6px; }
 
-    #dnsDisclaimer{
-      width: 92%;
-      font-size: 12.5px;
-      line-height: 1.5;
-      padding: 10px 10px;
-      border-radius: 12px;
-    }
-
-    #dnsCard{
-      width: 92%;
-      margin: 14px auto 18px;
-      padding: 14px 14px;
-      border-radius: 12px;
-    }
-
+    #dnsDisclaimer, #dnsCard, table{ width: 92%; }
+    #dnsCard{ padding: 14px 14px; border-radius: 12px; }
     #dnsCard h3{ font-size: 18px; }
     #dnsCard p{ font-size: 13px; }
 
-    .copy-btn{ padding: 6px 10px; }
-    table{
-      width: 92%;
-      font-size: 12px;
-    }
+    table{ font-size: 12px; }
     th, td{ padding: 8px 6px; }
   }
 </style>
@@ -307,7 +275,7 @@
   </div>
 
   <div class="nav-right">
-    <button id="nightToggle" type="button">Night Mode</button>
+    <button id="nightToggle" class="nav-btn" type="button">Night Mode</button>
     <div class="nightStyleWrap">
       <label for="nightStyle">Style</label>
       <select id="nightStyle">
@@ -319,45 +287,47 @@
   </div>
 </div>
 
-<h2>Recommended DNS for Your Best Server 🌐</h2>
-<div id="playerHint"></div>
+<div class="page-wrap">
+  <h2>Recommended DNS for Your Best Server 🌐</h2>
+  <div id="playerHint"></div>
 
-<div id="dnsDisclaimer">
-  ⚠ <strong>Note:</strong> Changing DNS does <em>not</em> force your game (PUBG, Warzone, etc.)
-  onto a specific region. DNS can improve latency, routing, and stability — but matchmaking still
-  decides the final server. These DNS settings are safe, fast, and tuned for the region with the
-  lowest ping for you right now.
-</div>
-
-<div id="dnsCard">
-  <h3 id="bestTitle">Detecting best server...</h3>
-  <p id="bestInfo"></p>
-
-  <div class="dns-line">
-    <span class="dns-label">Primary:</span>
-    <span class="dns-value" id="primaryDns">-</span>
-    <button class="copy-btn" type="button" onclick="copyDns('primary')">Copy</button>
+  <div id="dnsDisclaimer">
+    ⚠ <strong>Note:</strong> Changing DNS does <em>not</em> force your game (PUBG, Warzone, etc.)
+    onto a specific region. DNS can improve latency, routing, and stability — but matchmaking still
+    decides the final server. These DNS settings are safe, fast, and tuned for the region with the
+    lowest ping for you right now.
   </div>
 
-  <div class="dns-line">
-    <span class="dns-label">Secondary:</span>
-    <span class="dns-value" id="secondaryDns">-</span>
-    <button class="copy-btn" type="button" onclick="copyDns('secondary')">Copy</button>
+  <div id="dnsCard">
+    <h3 id="bestTitle">Detecting best server...</h3>
+    <p id="bestInfo"></p>
+
+    <div class="dns-line">
+      <span class="dns-label">Primary:</span>
+      <span class="dns-value" id="primaryDns">-</span>
+      <button class="copy-btn" type="button" onclick="copyDns('primary')">Copy</button>
+    </div>
+
+    <div class="dns-line">
+      <span class="dns-label">Secondary:</span>
+      <span class="dns-value" id="secondaryDns">-</span>
+      <button class="copy-btn" type="button" onclick="copyDns('secondary')">Copy</button>
+    </div>
+
+    <div id="copyStatus"></div>
   </div>
 
-  <div id="copyStatus"></div>
+  <table id="dnsTable">
+    <tr>
+      <th>Server</th>
+      <th>Region</th>
+      <th>Status</th>
+      <th>Ping (ms)</th>
+      <th>Primary DNS</th>
+      <th>Secondary DNS</th>
+    </tr>
+  </table>
 </div>
-
-<table id="dnsTable">
-  <tr>
-    <th>Server</th>
-    <th>Region</th>
-    <th>Status</th>
-    <th>Ping (ms)</th>
-    <th>Primary DNS</th>
-    <th>Secondary DNS</th>
-  </tr>
-</table>
 
 <script>
 const nightBtn = document.getElementById("nightToggle");
@@ -368,13 +338,10 @@ let playerRegion = null;
 let playerTimezone = null;
 let playerIP = null;
 
-/* Theme init */
 (function initTheme(){
   const savedTheme = localStorage.getItem("theme");
   const savedStyle = localStorage.getItem("nightStyle") || "comfort";
-
-  const prefersDark = window.matchMedia &&
-    window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
   const hour = new Date().getHours();
   const isNightByTime = (hour >= 20 || hour < 6);
 
@@ -389,7 +356,6 @@ let playerIP = null;
 nightBtn.addEventListener("click", ()=>{
   const state = document.body.classList.toggle("night");
   localStorage.setItem("theme", state ? "night" : "day");
-
   STYLES.forEach(s => document.body.classList.remove("night-"+s));
   if (state) {
     const savedStyle = localStorage.getItem("nightStyle") || "comfort";
@@ -400,13 +366,10 @@ nightBtn.addEventListener("click", ()=>{
 
 nightStyle.addEventListener("change", ()=>{
   STYLES.forEach(s => document.body.classList.remove("night-"+s));
-  if (document.body.classList.contains("night")) {
-    document.body.classList.add("night-"+nightStyle.value);
-  }
+  if (document.body.classList.contains("night")) document.body.classList.add("night-"+nightStyle.value);
   localStorage.setItem("nightStyle", nightStyle.value);
 });
 
-/* Player hint */
 async function loadPlayerMeta(){
   try{
     const res = await fetch("/api/player");
@@ -416,25 +379,19 @@ async function loadPlayerMeta(){
     playerIP = meta.ip || null;
 
     const hint = document.getElementById("playerHint");
-    if (playerRegion && playerTimezone) {
-      hint.textContent = `We think you're in: ${playerRegion} (TZ: ${playerTimezone}) • DNS tuned for your best region right now.`;
-    } else {
-      hint.textContent = `Could not detect your region. Showing global best DNS by ping.`;
-    }
+    hint.textContent = (playerRegion && playerTimezone)
+      ? `We think you're in: ${playerRegion} (TZ: ${playerTimezone}) • DNS tuned for your best region right now.`
+      : `Could not detect your region. Showing global best DNS by ping.`;
   } catch(e){
     console.error("Failed to load player meta:", e);
   }
 }
 
-/* Sorting matches Servers page */
 function sortServers(servers){
-  const rank = { "botty": 0, "average": 1, "sweaty": 2 };
+  const rank = { botty: 0, average: 1, sweaty: 2 };
   return servers.sort((a,b)=>{
-    const sa = (a.status || "").toLowerCase();
-    const sb = (b.status || "").toLowerCase();
-    const ra = rank[sa] ?? 99;
-    const rb = rank[sb] ?? 99;
-
+    const ra = rank[(a.status || "").toLowerCase()] ?? 99;
+    const rb = rank[(b.status || "").toLowerCase()] ?? 99;
     if (ra !== rb) return ra - rb;
 
     if (playerRegion) {
@@ -446,10 +403,8 @@ function sortServers(servers){
   });
 }
 
-/* Copy DNS */
 function copyDns(which){
-  const value = document.getElementById(which === "primary" ? "primaryDns" : "secondaryDns")
-    .textContent.trim();
+  const value = document.getElementById(which === "primary" ? "primaryDns" : "secondaryDns").textContent.trim();
   if (!value || value === "-") return;
 
   if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -479,7 +434,6 @@ function showCopyStatus(msg){
   setTimeout(()=>{ el.textContent = ""; }, 2500);
 }
 
-/* Load DNS data */
 async function loadDns(){
   try{
     const res = await fetch("/api/status");
@@ -535,6 +489,5 @@ loadPlayerMeta();
 loadDns();
 setInterval(loadDns, 15000);
 </script>
-
 </body>
 </html>
