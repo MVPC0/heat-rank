@@ -12,6 +12,8 @@
     --nav-bg: rgba(0,0,0,0.55);
   }
 
+  *{ box-sizing:border-box; }
+
   body{
     margin:0;
     padding:0;
@@ -42,43 +44,50 @@
   body.night.night-oled::before{ background: rgba(0,0,0,0.92); backdrop-filter: none; }
 
   /* =========================
-     NAVBAR (theme controls inside)
+     NAVBAR (CENTER LINKS + RIGHT CONTROLS)
      ========================= */
   #topNav{
-    display:flex;
+    position:fixed;
+    top:0; left:0; right:0;
+    z-index:50;
+
+    display:grid;
+    grid-template-columns: 1fr auto 1fr;
     align-items:center;
-    justify-content:space-between;
+
     gap:12px;
     padding:10px 14px;
     background: var(--nav-bg);
     color:#f3f4f6;
     font-weight:900;
-    flex-wrap:wrap;
-    position:fixed;
-    top:0; left:0; right:0;
-    z-index:50;
     backdrop-filter: blur(6px);
   }
-  .nav-left{
+
+  .nav-spacer{ min-height:1px; }
+
+  .nav-center{
     display:flex;
     align-items:center;
+    justify-content:center;
     gap:18px;
     flex-wrap:wrap;
   }
+
   #topNav a{
     color:#f3f4f6;
     text-decoration:none;
     font-weight:900;
     letter-spacing:.2px;
+    white-space:nowrap;
   }
   #topNav a:hover{ text-decoration:underline; }
 
   .nav-right{
     display:flex;
     align-items:center;
+    justify-content:flex-end;
     gap:10px;
     flex-wrap:wrap;
-    justify-content:flex-end;
   }
 
   #nightToggle{
@@ -107,6 +116,7 @@
     font-weight:900;
     white-space:nowrap;
   }
+
   #nightStyle{
     border-radius:8px;
     padding:6px 8px;
@@ -116,10 +126,6 @@
     font-weight:900;
     outline:none;
     cursor:pointer;
-  }
-  body:not(.night) #nightStyle{
-    background: rgba(255,255,255,0.18);
-    color:#ffffff;
   }
 
   /* =========================
@@ -244,9 +250,13 @@
   /* =========================
      MOBILE spacing (clean + breathable)
      ========================= */
-  @media (max-width: 640px){
-    #topNav{ padding: 10px 10px; gap: 10px; }
-    .nav-left{ gap: 12px; }
+  @media (max-width: 740px){
+    #topNav{
+      grid-template-columns: 1fr;
+      justify-items:center;
+      gap:10px;
+      padding:10px 10px;
+    }
     .nav-right{
       width: 100%;
       justify-content: center;
@@ -254,7 +264,7 @@
     }
 
     h2{
-      margin-top: 132px; /* navbar likely wraps to 2 rows */
+      margin-top: 132px; /* navbar wraps */
       font-size: 22px;
     }
 
@@ -288,7 +298,9 @@
 <body>
 
 <div id="topNav">
-  <div class="nav-left">
+  <div class="nav-spacer"></div>
+
+  <div class="nav-center">
     <a href="/">Home</a>
     <a href="/servers">Servers</a>
     <a href="/dns">DNS</a>
@@ -356,7 +368,7 @@ let playerRegion = null;
 let playerTimezone = null;
 let playerIP = null;
 
-/* Theme init (shared across pages) */
+/* Theme init */
 (function initTheme(){
   const savedTheme = localStorage.getItem("theme");
   const savedStyle = localStorage.getItem("nightStyle") || "comfort";
@@ -371,10 +383,7 @@ let playerIP = null;
     document.body.classList.add("night-" + savedStyle);
   }
   nightStyle.value = savedStyle;
-
-  nightBtn.textContent = document.body.classList.contains("night")
-    ? "Light Mode"
-    : "Night Mode";
+  nightBtn.textContent = document.body.classList.contains("night") ? "Light Mode" : "Night Mode";
 })();
 
 nightBtn.addEventListener("click", ()=>{
@@ -397,7 +406,7 @@ nightStyle.addEventListener("change", ()=>{
   localStorage.setItem("nightStyle", nightStyle.value);
 });
 
-/* Player IP / region hint */
+/* Player hint */
 async function loadPlayerMeta(){
   try{
     const res = await fetch("/api/player");
@@ -420,7 +429,6 @@ async function loadPlayerMeta(){
 /* Sorting matches Servers page */
 function sortServers(servers){
   const rank = { "botty": 0, "average": 1, "sweaty": 2 };
-
   return servers.sort((a,b)=>{
     const sa = (a.status || "").toLowerCase();
     const sb = (b.status || "").toLowerCase();
