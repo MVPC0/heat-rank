@@ -1,5 +1,5 @@
 from flask import Flask, render_template, jsonify, request
-from datetime import datetime, date
+from datetime import datetime
 import pytz
 import time
 import requests
@@ -7,6 +7,9 @@ import threading
 
 app = Flask(__name__)
 
+# -----------------------------
+# Health check (Render / uptime)
+# -----------------------------
 @app.route("/health")
 def health():
     return "ok", 200
@@ -90,7 +93,6 @@ HOLIDAYS = {
     (7, 4),                  # US Independence Day
     (10, 31),                # Halloween
 }
-
 TOURNAMENT_MONTHS = {3, 4, 5, 9, 10, 11}  # spring / fall esports seasons
 
 def is_holiday(dt):
@@ -100,18 +102,24 @@ def is_holiday(dt):
 # Ping measurement
 # ------------------------------------------------------
 def measure_ping(url, attempts=2, timeout=0.7):
+    """
+    Lightweight HTTP "ping" by timing GET latency.
+    NOTE: This measures HTTP/TLS/route latency, not ICMP.
+    """
     vals = []
     for _ in range(attempts):
         start = time.perf_counter()
         try:
-            requests.get(url, timeout=timeout)
+            # Use HEAD to reduce transfer; fallback to GET if blocked
+            r = requests.head(url, timeout=timeout, allow_redirects=True)
+            # Some endpoints may reject HEAD; try GET quickly
+            if r.status_code >= 400:
+                requests.get(url, timeout=timeout, stream=True)
         except Exception:
-            # still record elapsed so 5xx/timeouts look "bad"
             pass
         vals.append((time.perf_counter() - start) * 1000)
-    if not vals:
-        return 999.0
-    return sum(vals) / len(vals)
+
+    return (sum(vals) / len(vals)) if vals else 999.0
 
 # ------------------------------------------------------
 # Ping buckets → global relative Botty / Average / Sweaty
@@ -128,9 +136,7 @@ def compute_ping_buckets(pings):
 
     idx33 = max(0, int((n - 1) * 0.33))
     idx66 = max(0, int((n - 1) * 0.66))
-    p33 = sorted_p[idx33]
-    p66 = sorted_p[idx66]
-    return p33, p66
+    return sorted_p[idx33], sorted_p[idx66]
 
 # ------------------------------------------------------
 # Realistic status model (relative + time-of-day + region)
@@ -179,7 +185,6 @@ def get_status(server, ping, bot_cutoff, avg_cutoff):
     if tourney:
         avg_max -= 5
 
-    # Final classification
     if ping <= bot_max:
         return "Botty"
     if ping <= avg_max:
@@ -190,7 +195,7 @@ def get_status(server, ping, bot_cutoff, avg_cutoff):
 # Build JSON snapshot for API
 # ------------------------------------------------------
 def build_snapshot():
-    # ensure we have EMA for every server & collect pings
+    # Ensure we have EMA for every server & collect pings
     pings = []
     for s in servers:
         state = PING_STATE[s["name"]]
@@ -226,10 +231,7 @@ def refresh_loop(interval=8, alpha=0.40):
             for s in servers:
                 raw = measure_ping(s["url"])
                 state = PING_STATE[s["name"]]
-                if state["ema"] is None:
-                    state["ema"] = raw
-                else:
-                    state["ema"] = alpha * raw + (1 - alpha) * state["ema"]
+                state["ema"] = raw if state["ema"] is None else (alpha * raw + (1 - alpha) * state["ema"])
                 state["last_raw"] = raw
 
             snap = build_snapshot()
@@ -237,6 +239,7 @@ def refresh_loop(interval=8, alpha=0.40):
                 SERVER_CACHE = snap
         except Exception as e:
             print("refresh error:", e)
+
         time.sleep(interval)
 
 # ------------------------------------------------------
@@ -256,9 +259,7 @@ def mask_ip(ip: str) -> str:
     if ":" in ip:  # IPv6
         return ip.split(":", 1)[0] + "::/64"
     parts = ip.split(".")
-    if len(parts) == 4:
-        return ".".join(parts[:3]) + ".x"
-    return ip
+    return (".".join(parts[:3]) + ".x") if len(parts) == 4 else ip
 
 def lookup_player_region(ip: str):
     # local / dev
@@ -271,6 +272,7 @@ def lookup_player_region(ip: str):
         data = resp.json()
         if data.get("status") != "success":
             raise RuntimeError("geo failed")
+
         country = data.get("countryCode", "")
         tzname = data.get("timezone", "Unknown")
 
@@ -322,11 +324,7 @@ def api_status():
 def api_player():
     ip = get_client_ip()
     region, tzname = lookup_player_region(ip)
-    return jsonify({
-        "ip": mask_ip(ip),
-        "region": region,
-        "timezone": tzname,
-    })
+    return jsonify({"ip": mask_ip(ip), "region": region, "timezone": tzname})
 
 # ------------------------------------------------------
 # Start background + run app
