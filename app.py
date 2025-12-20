@@ -17,16 +17,13 @@ def health():
 
 # ------------------------------------------------------
 # Servers + DNS + region tag
-# (Original servers + extra popular game regions)
 # ------------------------------------------------------
 servers = [
-    # --- Original North America ---
+    # --- North America ---
     {"name": "US-East", "region": "North America", "timezone": "US/Eastern",
      "url": "https://dynamodb.us-east-1.amazonaws.com/", "primary_dns": "1.1.1.1", "secondary_dns": "1.0.0.1"},
     {"name": "US-West", "region": "North America", "timezone": "US/Pacific",
      "url": "https://dynamodb.us-west-2.amazonaws.com/", "primary_dns": "1.1.1.1", "secondary_dns": "1.0.0.1"},
-
-    # --- Extra NA game DCs ---
     {"name": "US-Central", "region": "North America", "timezone": "US/Central",
      "url": "https://dynamodb.us-east-2.amazonaws.com/", "primary_dns": "1.1.1.1", "secondary_dns": "1.0.0.1"},
     {"name": "US-South", "region": "North America", "timezone": "US/Central",
@@ -35,12 +32,10 @@ servers = [
     # --- Europe ---
     {"name": "Europe-West", "region": "Europe", "timezone": "Europe/Berlin",
      "url": "https://dynamodb.eu-west-1.amazonaws.com/", "primary_dns": "9.9.9.9", "secondary_dns": "149.112.112.112"},
-    {"name": "Europe-East", "region": "Europe", "timezone": "Europe/Kiev",
+    {"name": "Europe-East", "region": "Europe", "timezone": "Europe/Kyiv",
      "url": "https://dynamodb.eu-central-1.amazonaws.com/", "primary_dns": "9.9.9.9", "secondary_dns": "149.112.112.112"},
     {"name": "UK", "region": "Europe", "timezone": "Europe/London",
      "url": "https://dynamodb.eu-west-2.amazonaws.com/", "primary_dns": "9.9.9.9", "secondary_dns": "149.112.112.112"},
-
-    # --- Extra EU-style DC (Nordic-ish) ---
     {"name": "Europe-North", "region": "Europe", "timezone": "Europe/Stockholm",
      "url": "https://dynamodb.eu-north-1.amazonaws.com/", "primary_dns": "9.9.9.9", "secondary_dns": "149.112.112.112"},
 
@@ -48,13 +43,11 @@ servers = [
     {"name": "Brazil", "region": "South America", "timezone": "America/Sao_Paulo",
      "url": "https://dynamodb.sa-east-1.amazonaws.com/", "primary_dns": "1.1.1.1", "secondary_dns": "1.0.0.1"},
 
-    # --- Asia-Pacific core ---
+    # --- Asia-Pacific ---
     {"name": "Japan", "region": "Asia-Pacific", "timezone": "Asia/Tokyo",
      "url": "https://dynamodb.ap-northeast-1.amazonaws.com/", "primary_dns": "8.8.8.8", "secondary_dns": "8.8.4.4"},
     {"name": "South Korea", "region": "Asia-Pacific", "timezone": "Asia/Seoul",
      "url": "https://dynamodb.ap-northeast-2.amazonaws.com/", "primary_dns": "8.8.8.8", "secondary_dns": "8.8.4.4"},
-
-    # --- Extra APAC hubs ---
     {"name": "Singapore", "region": "Asia-Pacific", "timezone": "Asia/Singapore",
      "url": "https://dynamodb.ap-southeast-1.amazonaws.com/", "primary_dns": "8.8.8.8", "secondary_dns": "8.8.4.4"},
     {"name": "Hong Kong", "region": "Asia-Pacific", "timezone": "Asia/Hong_Kong",
@@ -65,8 +58,10 @@ servers = [
     # --- Oceania ---
     {"name": "Australia-East", "region": "Oceania", "timezone": "Australia/Sydney",
      "url": "https://dynamodb.ap-southeast-2.amazonaws.com/", "primary_dns": "1.1.1.1", "secondary_dns": "1.0.0.1"},
+    # ✅ was incorrectly ap-southeast-1 (Singapore). Use Melbourne as a separate AU target.
     {"name": "Australia-West", "region": "Oceania", "timezone": "Australia/Perth",
-     "url": "https://dynamodb.ap-southeast-1.amazonaws.com/", "primary_dns": "1.1.1.1", "secondary_dns": "1.0.0.1"},
+     "url": "https://dynamodb.ap-southeast-4.amazonaws.com/", "primary_dns": "1.1.1.1", "secondary_dns": "1.0.0.1"},
+    # NZ has no AWS region; keep it as "closest practical" (Sydney). If you want, swap to ap-southeast-4 to avoid duplicates.
     {"name": "New Zealand", "region": "Oceania", "timezone": "Pacific/Auckland",
      "url": "https://dynamodb.ap-southeast-2.amazonaws.com/", "primary_dns": "1.1.1.1", "secondary_dns": "1.0.0.1"},
 
@@ -84,104 +79,71 @@ PING_STATE = {s["name"]: {"ema": None, "last_raw": None} for s in servers}
 SERVER_CACHE = []
 CACHE_LOCK = threading.Lock()
 
-# ------------------------------------------------------
-# Holidays + tournament months (for realism)
-# ------------------------------------------------------
-HOLIDAYS = {
-    (12, 24), (12, 25),      # Christmas
-    (12, 31), (1, 1),        # New Year
-    (7, 4),                  # US Independence Day
-    (10, 31),                # Halloween
-}
-TOURNAMENT_MONTHS = {3, 4, 5, 9, 10, 11}  # spring / fall esports seasons
+HOLIDAYS = {(12, 24), (12, 25), (12, 31), (1, 1), (7, 4), (10, 31)}
+TOURNAMENT_MONTHS = {3, 4, 5, 9, 10, 11}
 
 def is_holiday(dt):
     return (dt.month, dt.day) in HOLIDAYS
 
 # ------------------------------------------------------
-# Ping measurement
+# Ping measurement (fixed)
 # ------------------------------------------------------
 def measure_ping(url, attempts=2, timeout=0.7):
     """
-    Lightweight HTTP "ping" by timing GET latency.
-    NOTE: This measures HTTP/TLS/route latency, not ICMP.
+    Lightweight HTTP "ping" by timing request latency.
+    Failed attempts count as full timeout (so failures look slow, not "fast").
     """
     vals = []
     for _ in range(attempts):
         start = time.perf_counter()
         try:
-            # Use HEAD to reduce transfer; fallback to GET if blocked
             r = requests.head(url, timeout=timeout, allow_redirects=True)
-            # Some endpoints may reject HEAD; try GET quickly
             if r.status_code >= 400:
                 requests.get(url, timeout=timeout, stream=True)
+            vals.append((time.perf_counter() - start) * 1000)
         except Exception:
-            pass
-        vals.append((time.perf_counter() - start) * 1000)
-
+            vals.append(timeout * 1000)
     return (sum(vals) / len(vals)) if vals else 999.0
 
 # ------------------------------------------------------
-# Ping buckets → global relative Botty / Average / Sweaty
+# Ping buckets → relative Botty / Average / Sweaty
 # ------------------------------------------------------
 def compute_ping_buckets(pings):
-    """
-    Given a list of ping ms, return (bot_cutoff, avg_cutoff)
-    based on ~33rd and ~66th percentile.
-    """
     sorted_p = sorted(pings)
     n = len(sorted_p)
     if n == 0:
         return 120, 180
-
     idx33 = max(0, int((n - 1) * 0.33))
     idx66 = max(0, int((n - 1) * 0.66))
     return sorted_p[idx33], sorted_p[idx66]
 
-# ------------------------------------------------------
-# Realistic status model (relative + time-of-day + region)
-# ------------------------------------------------------
 def get_status(server, ping, bot_cutoff, avg_cutoff):
     tz = pytz.timezone(server["timezone"])
     now = datetime.now(tz)
     hour = now.hour
-    weekday = now.weekday()  # Monday=0
+    weekday = now.weekday()
     holiday_today = is_holiday(now)
     tourney = now.month in TOURNAMENT_MONTHS
 
-    # Start from relative global thresholds
     bot_max = bot_cutoff
     avg_max = avg_cutoff
 
-    # Friday / weekend bump
-    if weekday in (4, 5, 6):      # Fri / Sat / Sun
+    if weekday in (4, 5, 6):
         bot_max -= 3
         avg_max -= 7
-
-    # Friday night surge
     if weekday == 4 and 18 <= hour <= 23:
         bot_max -= 7
         avg_max -= 10
-
-    # Prime-time evenings
     if 18 <= hour <= 23:
         bot_max -= 3
         avg_max -= 5
-
-    # Chill 3–8 AM
     if 3 <= hour < 8:
         bot_max += 8
         avg_max += 12
-
-    # Regional sweat boost
     if server["region"] in ("Asia-Pacific", "Europe") and 18 <= hour <= 23:
         avg_max -= 3
-
-    # Holidays a bit sweatier (people are home)
     if holiday_today:
         avg_max -= 8
-
-    # Tournament seasons
     if tourney:
         avg_max -= 5
 
@@ -191,11 +153,7 @@ def get_status(server, ping, bot_cutoff, avg_cutoff):
         return "Average"
     return "Sweaty"
 
-# ------------------------------------------------------
-# Build JSON snapshot for API
-# ------------------------------------------------------
 def build_snapshot():
-    # Ensure we have EMA for every server & collect pings
     pings = []
     for s in servers:
         state = PING_STATE[s["name"]]
@@ -208,8 +166,9 @@ def build_snapshot():
     data = []
     for s in servers:
         state = PING_STATE[s["name"]]
-        ping = round(state["ema"])
+        ping = int(min(max(round(state["ema"]), 1), 999))  # ✅ clamp for UI sanity
         tz = pytz.timezone(s["timezone"])
+
         data.append({
             "name": s["name"],
             "region": s["region"],
@@ -221,9 +180,6 @@ def build_snapshot():
         })
     return data
 
-# ------------------------------------------------------
-# Background refresh loop
-# ------------------------------------------------------
 def refresh_loop(interval=8, alpha=0.40):
     global SERVER_CACHE
     while True:
@@ -256,13 +212,12 @@ def mask_ip(ip: str) -> str:
         return "unknown"
     if ip.startswith(("127.", "192.168.", "10.")) or ip == "::1":
         return "local / LAN"
-    if ":" in ip:  # IPv6
+    if ":" in ip:
         return ip.split(":", 1)[0] + "::/64"
     parts = ip.split(".")
     return (".".join(parts[:3]) + ".x") if len(parts) == 4 else ip
 
 def lookup_player_region(ip: str):
-    # local / dev
     if not ip or ip.startswith(("127.", "192.168.", "10.")) or ip == "::1":
         local_tz = datetime.now().astimezone().tzinfo
         return "Local / Testing", str(local_tz)
@@ -316,7 +271,7 @@ def dns_page():
 @app.route("/api/status")
 def api_status():
     with CACHE_LOCK:
-        if SERVER_CACHE:
+        if isinstance(SERVER_CACHE, list) and SERVER_CACHE:
             return jsonify(SERVER_CACHE)
     return jsonify(build_snapshot())
 
