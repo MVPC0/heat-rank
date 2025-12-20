@@ -58,10 +58,10 @@ servers = [
     # --- Oceania ---
     {"name": "Australia-East", "region": "Oceania", "timezone": "Australia/Sydney",
      "url": "https://dynamodb.ap-southeast-2.amazonaws.com/", "primary_dns": "1.1.1.1", "secondary_dns": "1.0.0.1"},
-    # ✅ was incorrectly ap-southeast-1 (Singapore). Use Melbourne as a separate AU target.
+    # NOTE: ap-southeast-4 is Melbourne (AU). Keep if you want a distinct AU endpoint.
     {"name": "Australia-West", "region": "Oceania", "timezone": "Australia/Perth",
      "url": "https://dynamodb.ap-southeast-4.amazonaws.com/", "primary_dns": "1.1.1.1", "secondary_dns": "1.0.0.1"},
-    # NZ has no AWS region; keep it as "closest practical" (Sydney). If you want, swap to ap-southeast-4 to avoid duplicates.
+    # NZ has no AWS region; keeping Sydney as "closest practical".
     {"name": "New Zealand", "region": "Oceania", "timezone": "Pacific/Auckland",
      "url": "https://dynamodb.ap-southeast-2.amazonaws.com/", "primary_dns": "1.1.1.1", "secondary_dns": "1.0.0.1"},
 
@@ -117,7 +117,7 @@ def compute_ping_buckets(pings):
     idx66 = max(0, int((n - 1) * 0.66))
     return sorted_p[idx33], sorted_p[idx66]
 
-def get_status(server, ping, bot_cutoff, avg_cutoff):
+def get_status(server, ping_ms: float, bot_cutoff: float, avg_cutoff: float):
     tz = pytz.timezone(server["timezone"])
     now = datetime.now(tz)
     hour = now.hour
@@ -125,8 +125,8 @@ def get_status(server, ping, bot_cutoff, avg_cutoff):
     holiday_today = is_holiday(now)
     tourney = now.month in TOURNAMENT_MONTHS
 
-    bot_max = bot_cutoff
-    avg_max = avg_cutoff
+    bot_max = float(bot_cutoff)
+    avg_max = float(avg_cutoff)
 
     if weekday in (4, 5, 6):
         bot_max -= 3
@@ -147,33 +147,40 @@ def get_status(server, ping, bot_cutoff, avg_cutoff):
     if tourney:
         avg_max -= 5
 
-    if ping <= bot_max:
+    # ✅ Guardrail: keep an Average band alive (prevents “only botty/sweaty”)
+    min_gap = 12  # ms; tune 10–20 if you want
+    if avg_max < bot_max + min_gap:
+        avg_max = bot_max + min_gap
+
+    if ping_ms <= bot_max:
         return "Botty"
-    if ping <= avg_max:
+    if ping_ms <= avg_max:
         return "Average"
     return "Sweaty"
 
 def build_snapshot():
+    # Ensure we have EMA for every server & collect pings (floats)
     pings = []
     for s in servers:
         state = PING_STATE[s["name"]]
         if state["ema"] is None:
             state["ema"] = measure_ping(s["url"])
-        pings.append(state["ema"])
+        pings.append(float(state["ema"]))
 
     bot_cutoff, avg_cutoff = compute_ping_buckets(pings)
 
     data = []
     for s in servers:
         state = PING_STATE[s["name"]]
-        ping = int(min(max(round(state["ema"]), 1), 999))  # ✅ clamp for UI sanity
-        tz = pytz.timezone(s["timezone"])
+        ping_raw = float(state["ema"])                 # ✅ use raw float for status logic
+        ping_ui = int(min(max(round(ping_raw), 1), 999))  # ✅ rounded/clamped for UI
 
+        tz = pytz.timezone(s["timezone"])
         data.append({
             "name": s["name"],
             "region": s["region"],
-            "ping": ping,
-            "status": get_status(s, ping, bot_cutoff, avg_cutoff),
+            "ping": ping_ui,
+            "status": get_status(s, ping_raw, bot_cutoff, avg_cutoff),
             "local_time": datetime.now(tz).strftime("%H:%M"),
             "primary_dns": s["primary_dns"],
             "secondary_dns": s["secondary_dns"],
