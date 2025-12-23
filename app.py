@@ -4,6 +4,7 @@ import pytz
 import time
 import requests
 import threading
+import socket  # ✅ NEW (best overall ping)
 
 app = Flask(__name__)
 
@@ -58,10 +59,8 @@ servers = [
     # --- Oceania ---
     {"name": "Australia-East", "region": "Oceania", "timezone": "Australia/Sydney",
      "url": "https://dynamodb.ap-southeast-2.amazonaws.com/", "primary_dns": "1.1.1.1", "secondary_dns": "1.0.0.1"},
-    # Melbourne region is ap-southeast-4; keeping as distinct AU endpoint
     {"name": "Australia-West", "region": "Oceania", "timezone": "Australia/Perth",
      "url": "https://dynamodb.ap-southeast-4.amazonaws.com/", "primary_dns": "1.1.1.1", "secondary_dns": "1.0.0.1"},
-    # NZ has no AWS region; keeping Sydney as "closest practical"
     {"name": "New Zealand", "region": "Oceania", "timezone": "Pacific/Auckland",
      "url": "https://dynamodb.ap-southeast-2.amazonaws.com/", "primary_dns": "1.1.1.1", "secondary_dns": "1.0.0.1"},
 
@@ -73,10 +72,10 @@ servers = [
 ]
 
 # ------------------------------------------------------
-# Ping state + smoothing + history (NEW)
+# Ping state + smoothing + history
 # ------------------------------------------------------
 PING_STATE = {s["name"]: {"ema": None, "last_raw": None} for s in servers}
-PING_HISTORY = {s["name"]: [] for s in servers}  # NEW: last few UI pings for trend/confidence
+PING_HISTORY = {s["name"]: [] for s in servers}
 SERVER_CACHE = []
 CACHE_LOCK = threading.Lock()
 
@@ -87,27 +86,34 @@ def is_holiday(dt):
     return (dt.month, dt.day) in HOLIDAYS
 
 # ------------------------------------------------------
-# Ping measurement (fixed)
+# ✅ BEST OVERALL: TCP connect “ping” (port 443)
+# More stable than HTTP HEAD/GET for DynamoDB endpoints.
 # ------------------------------------------------------
-def measure_ping(url, attempts=2, timeout=0.7):
+def _host_from_url(url: str) -> str:
+    # accepts full URL; returns hostname
+    if "://" in url:
+        url = url.split("://", 1)[1]
+    return url.split("/", 1)[0]
+
+def measure_ping(url, attempts=3, timeout=0.8):
     """
-    Lightweight HTTP "ping" by timing request latency.
-    Failed attempts count as full timeout (so failures look slow, not "fast").
+    Best overall: measure TCP connect time to port 443.
+    Failed attempts count as full timeout (so failures look slow, not fast).
     """
+    host = _host_from_url(url)
     vals = []
     for _ in range(attempts):
         start = time.perf_counter()
         try:
-            r = requests.head(url, timeout=timeout, allow_redirects=True)
-            if r.status_code >= 400:
-                requests.get(url, timeout=timeout, stream=True)
+            with socket.create_connection((host, 443), timeout=timeout):
+                pass
             vals.append((time.perf_counter() - start) * 1000)
         except Exception:
             vals.append(timeout * 1000)
-    return (sum(vals) / len(vals)) if vals else 999.0
+    return (sum(vals) / len(vals)) if vals else (timeout * 1000)
 
 # ------------------------------------------------------
-# Enhancements: Activity / Trend / Confidence (NEW)
+# Enhancements: Activity / Trend / Confidence
 # ------------------------------------------------------
 def get_activity_level(server):
     tz = pytz.timezone(server["timezone"])
@@ -116,25 +122,17 @@ def get_activity_level(server):
     weekday = now.weekday()
 
     score = 0
-    # time
     if 18 <= hour <= 23:
         score += 3
     elif 3 <= hour < 8:
         score -= 2
 
-    # weekends
     if weekday in (4, 5, 6):
         score += 2
-
-    # holidays
     if is_holiday(now):
         score += 2
-
-    # tournaments
     if now.month in TOURNAMENT_MONTHS:
         score += 1
-
-    # region pressure
     if server["region"] in ("Asia-Pacific", "Europe"):
         score += 1
 
@@ -188,8 +186,6 @@ def get_status(server, ping_ms: float, bot_cutoff: float, avg_cutoff: float):
     now = datetime.now(tz)
     hour = now.hour
     weekday = now.weekday()
-    holiday_today = is_holiday(now)
-    tourney = now.month in TOURNAMENT_MONTHS
 
     bot_max = float(bot_cutoff)
     avg_max = float(avg_cutoff)
@@ -208,13 +204,13 @@ def get_status(server, ping_ms: float, bot_cutoff: float, avg_cutoff: float):
         avg_max += 12
     if server["region"] in ("Asia-Pacific", "Europe") and 18 <= hour <= 23:
         avg_max -= 3
-    if holiday_today:
+    if is_holiday(now):
         avg_max -= 8
-    if tourney:
+    if now.month in TOURNAMENT_MONTHS:
         avg_max -= 5
 
-    # ✅ Guardrail: keep an Average band alive (prevents “only botty/sweaty”)
-    min_gap = 12.0  # ms; tune 10–20 if you want
+    # keep Average band alive
+    min_gap = 12.0
     if avg_max < bot_max + min_gap:
         avg_max = bot_max + min_gap
 
@@ -228,7 +224,6 @@ def get_status(server, ping_ms: float, bot_cutoff: float, avg_cutoff: float):
 # Build JSON snapshot for API
 # ------------------------------------------------------
 def build_snapshot():
-    # Ensure we have EMA for every server & collect pings (floats)
     pings = []
     for s in servers:
         state = PING_STATE[s["name"]]
@@ -241,23 +236,23 @@ def build_snapshot():
     data = []
     for s in servers:
         state = PING_STATE[s["name"]]
-        ping_raw = float(state["ema"])  # raw float for status logic
-        ping_ui = int(min(max(round(ping_raw), 1), 999))  # rounded/clamped for UI
+        ping_raw = float(state["ema"])
+        ping_ui = int(min(max(round(ping_raw), 1), 999))
 
         push_history(s["name"], ping_ui)
+
+        # ✅ Down detection (prevents “999ms still ranked”)
+        is_down = ping_raw >= 0.98 * 1000 * 0.8  # ~timeout-based; keep simple
 
         tz = pytz.timezone(s["timezone"])
         data.append({
             "name": s["name"],
             "region": s["region"],
             "ping": ping_ui,
-            "status": get_status(s, ping_raw, bot_cutoff, avg_cutoff),
-
-            # NEW extras for UI
+            "status": ("Down" if is_down else get_status(s, ping_raw, bot_cutoff, avg_cutoff)),
             "trend": get_trend(s["name"]),
             "confidence": get_confidence(s["name"]),
             "activity": get_activity_level(s),
-
             "local_time": datetime.now(tz).strftime("%H:%M"),
             "primary_dns": s["primary_dns"],
             "secondary_dns": s["secondary_dns"],
