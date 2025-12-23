@@ -58,10 +58,10 @@ servers = [
     # --- Oceania ---
     {"name": "Australia-East", "region": "Oceania", "timezone": "Australia/Sydney",
      "url": "https://dynamodb.ap-southeast-2.amazonaws.com/", "primary_dns": "1.1.1.1", "secondary_dns": "1.0.0.1"},
-    # NOTE: ap-southeast-4 is Melbourne (AU). Keep if you want a distinct AU endpoint.
+    # Melbourne region is ap-southeast-4; keeping as distinct AU endpoint
     {"name": "Australia-West", "region": "Oceania", "timezone": "Australia/Perth",
      "url": "https://dynamodb.ap-southeast-4.amazonaws.com/", "primary_dns": "1.1.1.1", "secondary_dns": "1.0.0.1"},
-    # NZ has no AWS region; keeping Sydney as "closest practical".
+    # NZ has no AWS region; keeping Sydney as "closest practical"
     {"name": "New Zealand", "region": "Oceania", "timezone": "Pacific/Auckland",
      "url": "https://dynamodb.ap-southeast-2.amazonaws.com/", "primary_dns": "1.1.1.1", "secondary_dns": "1.0.0.1"},
 
@@ -73,9 +73,10 @@ servers = [
 ]
 
 # ------------------------------------------------------
-# Ping state + smoothing
+# Ping state + smoothing + history (NEW)
 # ------------------------------------------------------
 PING_STATE = {s["name"]: {"ema": None, "last_raw": None} for s in servers}
+PING_HISTORY = {s["name"]: [] for s in servers}  # NEW: last few UI pings for trend/confidence
 SERVER_CACHE = []
 CACHE_LOCK = threading.Lock()
 
@@ -106,16 +107,81 @@ def measure_ping(url, attempts=2, timeout=0.7):
     return (sum(vals) / len(vals)) if vals else 999.0
 
 # ------------------------------------------------------
+# Enhancements: Activity / Trend / Confidence (NEW)
+# ------------------------------------------------------
+def get_activity_level(server):
+    tz = pytz.timezone(server["timezone"])
+    now = datetime.now(tz)
+    hour = now.hour
+    weekday = now.weekday()
+
+    score = 0
+    # time
+    if 18 <= hour <= 23:
+        score += 3
+    elif 3 <= hour < 8:
+        score -= 2
+
+    # weekends
+    if weekday in (4, 5, 6):
+        score += 2
+
+    # holidays
+    if is_holiday(now):
+        score += 2
+
+    # tournaments
+    if now.month in TOURNAMENT_MONTHS:
+        score += 1
+
+    # region pressure
+    if server["region"] in ("Asia-Pacific", "Europe"):
+        score += 1
+
+    if score <= 1:
+        return "Low"
+    if score <= 4:
+        return "Medium"
+    return "High"
+
+def push_history(server_name, ping_ui):
+    h = PING_HISTORY[server_name]
+    h.append(int(ping_ui))
+    if len(h) > 6:
+        h.pop(0)
+
+def get_trend(server_name):
+    h = PING_HISTORY[server_name]
+    if len(h) < 3:
+        return "Stable"
+    if h[-1] < h[-2] < h[-3]:
+        return "Cooling"
+    if h[-1] > h[-2] > h[-3]:
+        return "Heating"
+    return "Stable"
+
+def get_confidence(server_name):
+    h = PING_HISTORY[server_name]
+    if len(h) < 4:
+        return "Low"
+    spread = max(h) - min(h)
+    if spread <= 10:
+        return "High"
+    if spread <= 25:
+        return "Medium"
+    return "Low"
+
+# ------------------------------------------------------
 # Ping buckets → relative Botty / Average / Sweaty
 # ------------------------------------------------------
 def compute_ping_buckets(pings):
     sorted_p = sorted(pings)
     n = len(sorted_p)
     if n == 0:
-        return 120, 180
+        return 120.0, 180.0
     idx33 = max(0, int((n - 1) * 0.33))
     idx66 = max(0, int((n - 1) * 0.66))
-    return sorted_p[idx33], sorted_p[idx66]
+    return float(sorted_p[idx33]), float(sorted_p[idx66])
 
 def get_status(server, ping_ms: float, bot_cutoff: float, avg_cutoff: float):
     tz = pytz.timezone(server["timezone"])
@@ -148,7 +214,7 @@ def get_status(server, ping_ms: float, bot_cutoff: float, avg_cutoff: float):
         avg_max -= 5
 
     # ✅ Guardrail: keep an Average band alive (prevents “only botty/sweaty”)
-    min_gap = 12  # ms; tune 10–20 if you want
+    min_gap = 12.0  # ms; tune 10–20 if you want
     if avg_max < bot_max + min_gap:
         avg_max = bot_max + min_gap
 
@@ -158,6 +224,9 @@ def get_status(server, ping_ms: float, bot_cutoff: float, avg_cutoff: float):
         return "Average"
     return "Sweaty"
 
+# ------------------------------------------------------
+# Build JSON snapshot for API
+# ------------------------------------------------------
 def build_snapshot():
     # Ensure we have EMA for every server & collect pings (floats)
     pings = []
@@ -172,8 +241,10 @@ def build_snapshot():
     data = []
     for s in servers:
         state = PING_STATE[s["name"]]
-        ping_raw = float(state["ema"])                 # ✅ use raw float for status logic
-        ping_ui = int(min(max(round(ping_raw), 1), 999))  # ✅ rounded/clamped for UI
+        ping_raw = float(state["ema"])  # raw float for status logic
+        ping_ui = int(min(max(round(ping_raw), 1), 999))  # rounded/clamped for UI
+
+        push_history(s["name"], ping_ui)
 
         tz = pytz.timezone(s["timezone"])
         data.append({
@@ -181,12 +252,21 @@ def build_snapshot():
             "region": s["region"],
             "ping": ping_ui,
             "status": get_status(s, ping_raw, bot_cutoff, avg_cutoff),
+
+            # NEW extras for UI
+            "trend": get_trend(s["name"]),
+            "confidence": get_confidence(s["name"]),
+            "activity": get_activity_level(s),
+
             "local_time": datetime.now(tz).strftime("%H:%M"),
             "primary_dns": s["primary_dns"],
             "secondary_dns": s["secondary_dns"],
         })
     return data
 
+# ------------------------------------------------------
+# Background refresh loop
+# ------------------------------------------------------
 def refresh_loop(interval=8, alpha=0.40):
     global SERVER_CACHE
     while True:
