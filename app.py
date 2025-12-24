@@ -4,7 +4,7 @@ import pytz
 import time
 import requests
 import threading
-import socket  # ✅ NEW (best overall ping)
+import socket
 
 app = Flask(__name__)
 
@@ -59,8 +59,10 @@ servers = [
     # --- Oceania ---
     {"name": "Australia-East", "region": "Oceania", "timezone": "Australia/Sydney",
      "url": "https://dynamodb.ap-southeast-2.amazonaws.com/", "primary_dns": "1.1.1.1", "secondary_dns": "1.0.0.1"},
+    # Melbourne region is ap-southeast-4; keeping as distinct AU endpoint
     {"name": "Australia-West", "region": "Oceania", "timezone": "Australia/Perth",
      "url": "https://dynamodb.ap-southeast-4.amazonaws.com/", "primary_dns": "1.1.1.1", "secondary_dns": "1.0.0.1"},
+    # NZ has no AWS region; keeping Sydney as "closest practical"
     {"name": "New Zealand", "region": "Oceania", "timezone": "Pacific/Auckland",
      "url": "https://dynamodb.ap-southeast-2.amazonaws.com/", "primary_dns": "1.1.1.1", "secondary_dns": "1.0.0.1"},
 
@@ -85,19 +87,24 @@ TOURNAMENT_MONTHS = {3, 4, 5, 9, 10, 11}
 def is_holiday(dt):
     return (dt.month, dt.day) in HOLIDAYS
 
+
 # ------------------------------------------------------
 # ✅ BEST OVERALL: TCP connect “ping” (port 443)
-# More stable than HTTP HEAD/GET for DynamoDB endpoints.
 # ------------------------------------------------------
+PING_TIMEOUT = 0.8  # seconds (single source of truth)
+
 def _host_from_url(url: str) -> str:
-    # accepts full URL; returns hostname
+    # accepts full URL; returns hostname without port
     if "://" in url:
         url = url.split("://", 1)[1]
-    return url.split("/", 1)[0]
+    host = url.split("/", 1)[0]
+    if ":" in host:
+        host = host.split(":", 1)[0]
+    return host
 
-def measure_ping(url, attempts=3, timeout=0.8):
+def measure_ping(url, attempts=3, timeout=PING_TIMEOUT):
     """
-    Best overall: measure TCP connect time to port 443.
+    TCP connect time to port 443.
     Failed attempts count as full timeout (so failures look slow, not fast).
     """
     host = _host_from_url(url)
@@ -111,6 +118,7 @@ def measure_ping(url, attempts=3, timeout=0.8):
         except Exception:
             vals.append(timeout * 1000)
     return (sum(vals) / len(vals)) if vals else (timeout * 1000)
+
 
 # ------------------------------------------------------
 # Enhancements: Activity / Trend / Confidence
@@ -169,6 +177,7 @@ def get_confidence(server_name):
         return "Medium"
     return "Low"
 
+
 # ------------------------------------------------------
 # Ping buckets → relative Botty / Average / Sweaty
 # ------------------------------------------------------
@@ -209,7 +218,7 @@ def get_status(server, ping_ms: float, bot_cutoff: float, avg_cutoff: float):
     if now.month in TOURNAMENT_MONTHS:
         avg_max -= 5
 
-    # keep Average band alive
+    # keep Average band alive (prevents only Botty/Sweaty)
     min_gap = 12.0
     if avg_max < bot_max + min_gap:
         avg_max = bot_max + min_gap
@@ -220,18 +229,29 @@ def get_status(server, ping_ms: float, bot_cutoff: float, avg_cutoff: float):
         return "Average"
     return "Sweaty"
 
+
 # ------------------------------------------------------
 # Build JSON snapshot for API
 # ------------------------------------------------------
 def build_snapshot():
-    pings = []
+    # Ensure EMA exists
     for s in servers:
         state = PING_STATE[s["name"]]
         if state["ema"] is None:
             state["ema"] = measure_ping(s["url"])
-        pings.append(float(state["ema"]))
 
-    bot_cutoff, avg_cutoff = compute_ping_buckets(pings)
+    timeout_ms = PING_TIMEOUT * 1000.0
+
+    # Compute buckets using only healthy pings (Down shouldn't distort the percentiles)
+    healthy_pings = [
+        float(PING_STATE[s["name"]]["ema"])
+        for s in servers
+        if float(PING_STATE[s["name"]]["ema"]) < (0.95 * timeout_ms)
+    ]
+    if not healthy_pings:
+        healthy_pings = [float(PING_STATE[s["name"]]["ema"]) for s in servers]
+
+    bot_cutoff, avg_cutoff = compute_ping_buckets(healthy_pings)
 
     data = []
     for s in servers:
@@ -241,8 +261,8 @@ def build_snapshot():
 
         push_history(s["name"], ping_ui)
 
-        # ✅ Down detection (prevents “999ms still ranked”)
-        is_down = ping_raw >= 0.98 * 1000 * 0.8  # ~timeout-based; keep simple
+        # ✅ Down detection consistent with timeout
+        is_down = ping_raw >= (0.95 * timeout_ms)
 
         tz = pytz.timezone(s["timezone"])
         data.append({
@@ -258,6 +278,7 @@ def build_snapshot():
             "secondary_dns": s["secondary_dns"],
         })
     return data
+
 
 # ------------------------------------------------------
 # Background refresh loop
@@ -279,6 +300,7 @@ def refresh_loop(interval=8, alpha=0.40):
             print("refresh error:", e)
 
         time.sleep(interval)
+
 
 # ------------------------------------------------------
 # Player IP → approximate region / timezone
@@ -335,6 +357,7 @@ def lookup_player_region(ip: str):
         local_tz = datetime.now().astimezone().tzinfo
         return "Unknown", str(local_tz)
 
+
 # ------------------------------------------------------
 # Routes
 # ------------------------------------------------------
@@ -362,6 +385,7 @@ def api_player():
     ip = get_client_ip()
     region, tzname = lookup_player_region(ip)
     return jsonify({"ip": mask_ip(ip), "region": region, "timezone": tzname})
+
 
 # ------------------------------------------------------
 # Start background + run app
